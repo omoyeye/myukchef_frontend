@@ -1,0 +1,520 @@
+import { useState, useEffect } from 'react';
+import { Layout } from '@/components/layout/Layout';
+import { CustomerPortal } from '@/components/layout/CustomerPortal';
+import { BOOKING_STATUS } from '@/lib/eventBookings';
+import { AccountData } from '@/components/account/AccountData';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from '@/contexts/AuthContext';
+import { MapPin, LogOut, ChevronRight, Leaf, Gift, Clock, Plus, Trash2, Zap, Ticket, CalendarHeart } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import { useCart } from '@/contexts/CartContext';
+import SEO from '@/components/common/SEO';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+
+interface Address {
+    id: number;
+    name: string;
+    street: string;
+    city: string;
+    postcode: string;
+    isDefault: boolean;
+}
+
+interface OrderItem {
+    id: number;
+    quantity: number;
+    price: number;
+    selectedModifiers?: any[];
+    product: {
+        id: string;
+        name: string;
+        image: string;
+        description: string;
+        price: number;
+        category: string;
+    };
+}
+
+interface Order {
+    id: number;
+    status: string;
+    total: number;
+    createdAt: string;
+    items: OrderItem[];
+}
+
+interface EventBooking {
+    id: number;
+    eventName: string;
+    eventDate: string;
+    eventTime: string;
+    headcount: number;
+    venue: string;
+    status: string;
+    estimatedTotal: number;
+    finalTotal?: number | null;
+    quoteCount?: number;
+    quotesIn?: number;
+}
+
+const Profile = () => {
+    const { user, logout } = useAuth();
+    const { addItem, clearCart } = useCart();
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'overview';
+
+    const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
+    const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postcode: '' });
+
+    // Fetch Orders
+    const { data: orders = [], isLoading: isLoadingOrders } = useQuery<Order[]>({
+        queryKey: ['my-orders'],
+        queryFn: async () => {
+            return api.get('/orders/my-orders');
+        },
+        enabled: !!user
+    });
+
+    // Fetch Addresses
+    const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery<Address[]>({
+        queryKey: ['my-addresses'],
+        queryFn: async () => {
+            return api.get('/addresses');
+        },
+        enabled: !!user
+    });
+
+    // Fetch Event Bookings
+    const { data: bookings = [], isLoading: isLoadingBookings } = useQuery<EventBooking[]>({
+        queryKey: ['my-events'],
+        queryFn: () => api.get('/events/me'),
+        enabled: !!user
+    });
+
+    // Add Address Mutation
+    const addAddressMutation = useMutation({
+        mutationFn: async (address: typeof newAddress) => {
+            return api.post('/addresses', address);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-addresses'] });
+            setIsAddressDialogOpen(false);
+            setNewAddress({ name: '', street: '', city: '', postcode: '' });
+            toast.success("Address added successfully");
+        },
+        onError: () => toast.error("Failed to add address")
+    });
+
+    // Delete Address Mutation
+    const deleteAddressMutation = useMutation({
+        mutationFn: async (id: number) => {
+            return api.delete(`/addresses/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-addresses'] });
+            toast.success("Address deleted");
+        }
+    });
+
+    const handleTabChange = (value: string) => {
+        setSearchParams({ tab: value });
+    };
+
+    const handleAddAddress = (e: React.FormEvent) => {
+        e.preventDefault();
+        addAddressMutation.mutate(newAddress);
+    };
+
+    if (!user) {
+        return (
+            <Layout>
+                <div className="container py-20 text-center">
+                    <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
+                    <p className="text-muted-foreground mb-8">Access your profile, points, and order history.</p>
+                    <Link to="/login?redirect=%2Fprofile"><Button>Log In / Sign Up</Button></Link>
+                </div>
+            </Layout>
+        );
+    }
+
+    return (
+        <CustomerPortal>
+            <SEO noindex title={`${user.name}'s Profile`} description="Manage your MYUKCHEF account, rewards, and order history." />
+            <div>
+                <div className="max-w-3xl space-y-4 md:space-y-6">
+
+                    {/* User Header */}
+                    <div className="flex items-center gap-3 md:gap-4 mb-4">
+                        <Avatar className="h-14 w-14 shrink-0 md:h-20 md:w-20 border-4 border-background shadow-sm">
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                            <h1 className="truncate text-xl md:text-2xl font-bold">{user.name}</h1>
+                            <p className="truncate text-sm md:text-base text-muted-foreground">{user.email}</p>
+                            <div className="flex flex-wrap items-center gap-1 md:gap-2 mt-1">
+                                <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
+                                    <Zap className="h-3 w-3 fill-primary mr-1" />
+                                    {user.points} Points
+                                </Badge>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="icon" aria-label="Log out" className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive" onClick={logout}>
+                            <LogOut className="h-5 w-5" />
+                        </Button>
+                    </div>
+
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+
+                        {/* OVERVIEW TAB */}
+                        <TabsContent value="overview" className="space-y-6 animate-fade-in">
+                            <Link to="/my-plans" className="flex items-center gap-4 rounded-3xl bg-ink p-5 text-ink-foreground transition-transform hover:-translate-y-0.5">
+                                <CalendarHeart className="h-8 w-8 shrink-0 text-primary" />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block font-bold">My meal plans</span>
+                                    <span className="block text-sm text-ink-foreground/70">Change, skip or pause your deliveries, and see your saved chefs</span>
+                                </span>
+                                <ChevronRight className="h-5 w-5 shrink-0" />
+                            </Link>
+
+                            {/* Loyalty Card */}
+                            <Card className="bg-gradient-to-r from-orange-600 to-red-600 text-white border-0 shadow-warm overflow-hidden relative group">
+                                <div className="absolute right-0 top-0 p-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
+                                <CardHeader className="pb-2">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-white/80 font-medium text-sm uppercase tracking-wider">Loyalty Points Balance</p>
+                                            <CardTitle className="text-5xl font-black mt-1 tracking-tighter italic">{user.points}</CardTitle>
+                                        </div>
+                                        <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center p-2 shadow-inner border border-white/30">
+                                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain brightness-0 invert" />
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <div className="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
+                                            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((user.points / 500) * 100, 100)}%` }}></div>
+                                        </div>
+                                        <div className="flex justify-between gap-2 text-[10px] md:text-xs font-bold text-white/90 uppercase tracking-wider md:tracking-widest">
+                                            <span>Current Level</span>
+                                            <span>Next Perk: 500 Pts</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm font-medium text-white/95 leading-relaxed">
+                                        You're just <span className="underline decoration-2 underline-offset-2">{(500 - (user.points % 500)) % 500} points</span> away from your next £5 feast voucher!
+                                    </p>
+                                    <Button variant="secondary" className="w-full bg-white text-orange-700 hover:bg-orange-50 font-bold" onClick={() => handleTabChange('rewards')}>
+                                        View Rewards Vault
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            <AccountData />
+
+                            {/* Recent Activity Mini-List */}
+                            <div>
+                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                    <Clock className="h-5 w-5 text-primary" /> Recent Orders
+                                </h3>
+                                <div className="space-y-3">
+                                    {isLoadingOrders ? (
+                                        <Skeleton className="h-20 w-full" />
+                                    ) : orders.length > 0 ? (
+                                        orders.slice(0, 2).map(order => (
+                                            <div key={order.id} className="bg-background rounded-xl p-4 border shadow-sm flex items-center justify-between group cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(`/order-tracker/${order.id}`)}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-10 w-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors uppercase font-black italic">
+                                                        M
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold">Order #{order.id}</p>
+                                                        <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="outline" className="capitalize">{order.status}</Badge>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">No orders yet. Let's change that!</p>
+                                    )}
+                                    <Button variant="link" className="w-full text-primary font-bold uppercase tracking-widest text-xs" onClick={() => handleTabChange('history')}>
+                                        View Full History <ChevronRight className="ml-1 h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Addresses Section */}
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <MapPin className="h-5 w-5 text-primary" /> Delivery Spots
+                                    </h3>
+                                    <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="h-11 gap-1 rounded-lg md:h-9">
+                                                <Plus className="h-3 w-3" /> Add Spot
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Add New Spot</DialogTitle>
+                                                <DialogDescription>Where should we deliver your orders?</DialogDescription>
+                                            </DialogHeader>
+                                            <form onSubmit={handleAddAddress}>
+                                                <div className="space-y-4 py-4">
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="name">Label (e.g. Home Base)</Label>
+                                                        <Input id="name" placeholder="Home, Office..." value={newAddress.name} onChange={e => setNewAddress({ ...newAddress, name: e.target.value })} required />
+                                                    </div>
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="street">Street Address</Label>
+                                                        <Input id="street" placeholder="Street and house number" value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} required />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="city">City</Label>
+                                                            <Input id="city" value={newAddress.city} onChange={e => setNewAddress({ ...newAddress, city: e.target.value })} required />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="postcode">Postcode</Label>
+                                                            <Input id="postcode" value={newAddress.postcode} onChange={e => setNewAddress({ ...newAddress, postcode: e.target.value })} required />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="submit" disabled={addAddressMutation.isPending} className="w-full">
+                                                        {addAddressMutation.isPending ? "Locking it in..." : "Save Delivery Spot"}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                                <div className="grid gap-3">
+                                    {isLoadingAddresses ? (
+                                        <Skeleton className="h-24 w-full" />
+                                    ) : addresses.length > 0 ? (
+                                        addresses.map(addr => (
+                                            <Card key={addr.id} className="p-3 md:p-4 flex justify-between items-center gap-2 shadow-sm border-muted hover:border-primary/30 transition-colors">
+                                                <div className="flex min-w-0 items-start gap-3">
+                                                    <div className="shrink-0 p-2 bg-secondary/50 rounded-lg text-primary mt-0.5">
+                                                        <MapPin className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold leading-none mb-1 break-words">{addr.name}</p>
+                                                        <p className="text-xs text-muted-foreground break-words">{addr.street}, {addr.city} {addr.postcode}</p>
+                                                    </div>
+                                                </div>
+                                                <Button variant="ghost" size="icon" aria-label={`Delete ${addr.name}`} className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={() => deleteAddressMutation.mutate(addr.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <div className="p-6 text-center border-2 border-dashed rounded-xl bg-background/50">
+                                            <MapPin className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                                            <p className="text-sm text-muted-foreground">No delivery spots saved yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </TabsContent>
+
+                        {/* REWARDS TAB */}
+                        <TabsContent value="rewards" className="space-y-6 animate-fade-in">
+                            <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 flex flex-col items-center text-center space-y-3">
+                                <Gift className="h-10 w-10 text-primary" />
+                                <h3 className="text-xl font-black italic tracking-tight uppercase">Your Rewards Vault</h3>
+                                <p className="text-sm text-muted-foreground max-w-xs">
+                                    Exchange your hard-earned points for delicious perks and exclusive discounts.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4">
+                                <Card className="overflow-hidden border-l-4 border-l-orange-500 group hover:shadow-md transition-shadow">
+                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Ticket className="h-8 w-8" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">£5 Feast Voucher</h4>
+                                                <p className="text-xs text-muted-foreground">Valid for any order over £20</p>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
+                                                    <span className="text-xs font-bold">500 Points</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button className="h-11 shrink-0 md:h-9" variant={user.points >= 500 ? "default" : "outline"} disabled={user.points < 500}>
+                                            {user.points >= 500 ? "Redeem" : "Locked"}
+                                        </Button>
+                                    </div>
+                                </Card>
+
+                                <Card className="overflow-hidden border-l-4 border-l-red-500 group hover:shadow-md transition-shadow">
+                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Leaf className="h-8 w-8" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">Free Side Dish</h4>
+                                                <p className="text-xs text-muted-foreground">Enjoy a free side of Plantain or Puff Puff</p>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
+                                                    <span className="text-xs font-bold">350 Points</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button className="h-11 shrink-0 md:h-9" variant={user.points >= 350 ? "default" : "outline"} disabled={user.points < 350}>
+                                            {user.points >= 350 ? "Redeem" : "Locked"}
+                                        </Button>
+                                    </div>
+                                </Card>
+
+                                <Card className="overflow-hidden border-l-4 border-l-yellow-600 group opacity-75 grayscale hover:grayscale-0 transition-all">
+                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center p-2">
+                                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">The Chef's Special</h4>
+                                                <p className="text-xs text-muted-foreground">Complimentary main course on us!</p>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
+                                                    <span className="text-xs font-bold">1500 Points</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button className="h-11 shrink-0 md:h-9" variant="outline" disabled>
+                                            Locked
+                                        </Button>
+                                    </div>
+                                </Card>
+                            </div>
+
+                            <div className="p-6 text-center border-2 border-dashed rounded-2xl">
+                                <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">More Treats Coming Soon</h4>
+                                <p className="text-xs text-muted-foreground mt-1">Follow our social media for surprise drops!</p>
+                            </div>
+                        </TabsContent>
+
+                        {/* HISTORY TAB */}
+                        <TabsContent value="history" className="animate-fade-in">
+                            <Card className="border-none shadow-sm overflow-hidden bg-transparent">
+                                <CardHeader className="px-0">
+                                    <CardTitle className="text-xl font-black italic tracking-tight uppercase">Your Feast History</CardTitle>
+                                    <CardDescription>Click any order to track it or view details.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="px-0 space-y-4">
+                                    {isLoadingOrders ? (
+                                        <div className="space-y-4">
+                                            <Skeleton className="h-24 w-full rounded-2xl" />
+                                            <Skeleton className="h-24 w-full rounded-2xl" />
+                                        </div>
+                                    ) : orders.length > 0 ? (
+                                        orders.map(order => (
+                                            <div key={order.id} className="bg-background border rounded-2xl p-4 md:p-5 hover:border-primary/50 transition-all cursor-pointer group flex items-center justify-between gap-2" onClick={() => navigate(`/order-tracker/${order.id}`)}>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+                                                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-[10px] font-black italic group-hover:bg-primary group-hover:text-white transition-colors">
+                                                            M
+                                                        </div>
+                                                        <span className="font-black text-lg italic uppercase tracking-tight">Order #{order.id}</span>
+                                                        <Badge variant={order.status === 'completed' ? 'default' : 'secondary'} className="text-[9px] uppercase tracking-widest px-2 py-0">
+                                                            {order.status}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-sm text-foreground font-medium truncate mb-1">
+                                                        {order.items.map(i => `${i.quantity}x ${i.product?.name || 'Item'}`).join(', ')}
+                                                    </p>
+                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground font-bold uppercase tracking-widest">
+                                                        <span>{new Date(order.createdAt).toLocaleDateString()}</span>
+                                                        <span className="h-1 w-1 bg-muted-foreground rounded-full"></span>
+                                                        <span className="text-primary font-black italic text-sm">£{order.total.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex shrink-0 items-center gap-1 md:gap-3">
+                                                    <Button variant="ghost" size="sm" className="h-11 px-2 rounded-lg font-bold uppercase tracking-tighter text-xs" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        clearCart();
+                                                        order.items.forEach(item => {
+                                                            if (item.product) {
+                                                                addItem(item.product as any, item.quantity, item.selectedModifiers || []);
+                                                            }
+                                                        });
+                                                        toast.success("Feast added to cart!");
+                                                        navigate('/cart');
+                                                    }}>REORDER</Button>
+                                                    <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-20 bg-background rounded-3xl border-2 border-dashed">
+                                            <div className="bg-secondary/20 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <Clock className="h-10 w-10 text-muted-foreground/30" />
+                                            </div>
+                                            <h3 className="font-black italic text-xl uppercase tracking-tighter mb-2">No feasts yet?</h3>
+                                            <p className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto">Your order history will appear here after your first order.</p>
+                                            <Button asChild className="rounded-xl px-10 py-6 text-lg font-black italic uppercase">
+                                                <Link to="/menu">Order Now</Link>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* BOOKINGS TAB */}
+                        <TabsContent value="bookings" className="space-y-3 animate-fade-in">
+                            {isLoadingBookings ? (
+                                <Skeleton className="h-24 w-full rounded-2xl" />
+                            ) : bookings.length > 0 ? (
+                                bookings.map(booking => (
+                                    <div key={booking.id} className="bg-background border rounded-2xl p-4">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h3 className="min-w-0 font-bold break-words">{booking.eventName}</h3>
+                                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${(BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoting).className}`}>{(BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoting).label}</span>
+                                        </div>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {new Date(booking.eventDate).toLocaleDateString()} at {booking.eventTime} · {booking.headcount} guests
+                                        </p>
+                                        <p className="text-sm text-muted-foreground break-words">{booking.venue}</p>
+                                        <div className="mt-2 flex items-center justify-between gap-2">
+                                            <p className="min-w-0 text-sm font-semibold text-muted-foreground">{booking.finalTotal != null ? <span className="font-bold text-primary">£{booking.finalTotal.toFixed(2)}</span> : `${booking.quotesIn ?? 0} of ${booking.quoteCount ?? 0} chefs replied`}</p>
+                                            <Button asChild variant="outline" className="h-11 shrink-0"><Link to={`/my-bookings/${booking.id}`}>View booking</Link></Button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 bg-background rounded-3xl border-2 border-dashed">
+                                    <CalendarHeart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                                    <p className="text-muted-foreground text-sm mb-4">You haven't booked an event yet.</p>
+                                    <Button asChild className="h-11"><Link to="/events">Get quotes for an event</Link></Button>
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
+
+                </div>
+            </div>
+        </CustomerPortal>
+    );
+};
+
+export default Profile;

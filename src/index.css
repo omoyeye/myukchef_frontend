@@ -1,0 +1,260 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MYUKCHEF design system */
+
+@layer base {
+  :root {
+    --background: 36 33% 97%;
+    --foreground: 20 14% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 25% 10%;
+
+    /* Vibrant Orange - Primary Brand Color */
+    --primary: 20 96% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Warm Cream - Secondary */
+    --secondary: 35 40% 95%;
+    --secondary-foreground: 20 25% 15%;
+
+    /* Earthy Brown - Muted tones */
+    --muted: 30 15% 92%;
+    --muted-foreground: 20 10% 45%;
+
+    /* Golden Accent */
+    --accent: 42 96% 56%;
+    --accent-foreground: 20 25% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 24 100% 50%;
+
+    --radius: 1rem;
+    --ink: 20 14% 9%;
+    --ink-foreground: 36 33% 97%;
+
+    /* Extended palette */
+    --brand-orange: 24 100% 50%;
+    --brand-orange-light: 24 100% 60%;
+    --brand-orange-dark: 24 100% 40%;
+    --brand-gold: 45 90% 55%;
+    --brand-brown: 20 35% 25%;
+    --brand-cream: 35 40% 95%;
+    --brand-terracotta: 15 60% 55%;
+    --brand-success: 142 70% 45%;
+    --brand-warning: 38 92% 50%;
+
+    --sidebar-background: 30 20% 98%;
+    --sidebar-foreground: 20 25% 15%;
+    --sidebar-primary: 24 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 35 40% 95%;
+    --sidebar-accent-foreground: 20 25% 15%;
+    --sidebar-border: 30 20% 88%;
+    --sidebar-ring: 24 100% 50%;
+  }
+
+  .dark {
+    --background: 20 25% 8%;
+    --foreground: 30 20% 95%;
+
+    --card: 20 20% 12%;
+    --card-foreground: 30 20% 95%;
+
+    --popover: 20 20% 12%;
+    --popover-foreground: 30 20% 95%;
+
+    --primary: 24 100% 55%;
+    --primary-foreground: 20 25% 10%;
+
+    --secondary: 20 15% 18%;
+    --secondary-foreground: 30 20% 90%;
+
+    --muted: 20 15% 18%;
+    --muted-foreground: 30 10% 60%;
+
+    --accent: 45 85% 50%;
+    --accent-foreground: 20 25% 10%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 15% 22%;
+    --input: 20 15% 22%;
+    --ring: 24 100% 55%;
+    --ink: 20 14% 6%;
+    --ink-foreground: 36 33% 97%;
+
+    --brand-orange: 24 100% 55%;
+    --brand-orange-light: 24 100% 65%;
+    --brand-orange-dark: 24 100% 45%;
+    --brand-gold: 45 85% 50%;
+    --brand-brown: 20 20% 70%;
+    --brand-cream: 35 20% 20%;
+    --brand-terracotta: 15 55% 50%;
+    --brand-success: 142 65% 40%;
+    --brand-warning: 38 90% 45%;
+
+    --sidebar-background: 20 25% 10%;
+    --sidebar-foreground: 30 20% 90%;
+    --sidebar-primary: 24 100% 55%;
+    --sidebar-primary-foreground: 20 25% 10%;
+    --sidebar-accent: 20 15% 18%;
+    --sidebar-accent-foreground: 30 20% 90%;
+    --sidebar-border: 20 15% 22%;
+    --sidebar-ring: 24 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  h1, h2, h3, .font-display {
+    font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .tap-clean {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-gradient-orange {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .shadow-warm {
+    box-shadow: 0 4px 20px -2px hsl(24 100% 50% / 0.15);
+  }
+
+  .shadow-warm-lg {
+    box-shadow: 0 10px 40px -5px hsl(24 100% 50% / 0.2);
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+a,
+button,
+[role="button"],
+label {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Home page hero motion. The looping effects only use transform, so they stay smooth on phones. */
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-pop {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes hero-float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-0.5rem); }
+}
+@keyframes hero-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+@keyframes hero-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-3rem, 2rem) scale(1.15); }
+}
+@keyframes hero-underline {
+  from { background-size: 0 0.07em; }
+  to { background-size: 100% 0.07em; }
+}
+
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--hero-delay, 0ms) both;
+}
+.hero-frame {
+  animation: hero-pop 0.9s cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+.hero-zoom {
+  animation: hero-zoom 16s ease-in-out infinite alternate;
+}
+.hero-glow {
+  animation: hero-drift 14s ease-in-out infinite alternate;
+}
+.hero-glow-slow {
+  animation-duration: 19s;
+  animation-direction: alternate-reverse;
+}
+.hero-chip {
+  animation:
+    hero-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) 800ms both,
+    hero-float 3.5s ease-in-out 1400ms infinite alternate;
+}
+.hero-chip-late {
+  animation-delay: 1000ms, 1900ms;
+}
+/* Drawn on the text itself, so it follows each line when the headline wraps. */
+.hero-underline {
+  padding-bottom: 0.06em;
+  background: linear-gradient(currentColor, currentColor) no-repeat left bottom;
+  background-size: 0 0.07em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: hero-underline 0.8s cubic-bezier(0.22, 1, 0.36, 1) 800ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .hero-frame,
+  .hero-chip,
+  .hero-underline {
+    animation-delay: 0ms !important;
+  }
+  .hero-zoom,
+  .hero-glow {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
