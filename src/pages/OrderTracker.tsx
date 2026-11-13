@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import SEO from '@/components/common/SEO';
 import { OrderProgressPanel } from '@/components/orders/OrderProgressPanel';
+import { PaymentStatusBanner } from '@/components/orders/PaymentStatusBanner';
 
 const milesApart = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
     const toRad = (d: number) => (d * Math.PI) / 180;
@@ -89,7 +90,7 @@ const OrderTracker = () => {
                         </div>
                         <div className="flex items-center gap-3">
                             <Badge variant={order.status === 'completed' ? "default" : "secondary"} className="text-xs px-4 py-1 uppercase tracking-widest font-bold">
-                                {order.status === 'completed' ? 'Delivered' : order.status}
+                                {order.status === 'completed' ? 'Delivered' : order.status === 'awaiting_payment' ? 'Awaiting payment' : order.status}
                             </Badge>
                             <Button variant="outline" size="sm" asChild className="rounded-lg h-9 font-bold uppercase tracking-tighter text-xs">
                                 <Link to="/track-order">New Search</Link>
@@ -97,8 +98,18 @@ const OrderTracker = () => {
                         </div>
                     </div>
 
+                    <PaymentStatusBanner
+                        orderId={order.id}
+                        paymentStatus={order.paymentStatus ?? 'not_required'}
+                        total={order.total}
+                        refundedAt={order.refundedAt}
+                        token={trackingToken}
+                        returnedPaid={searchParams.get('paid') === '1'}
+                        returnedCancelled={searchParams.get('payment') === 'cancelled'}
+                    />
+
                     {/* Live map: the customer's destination plus the courier while out for delivery */}
-                    {order.status !== 'completed' && order.status !== 'cancelled' && order.destination && (
+                    {!['completed', 'cancelled', 'awaiting_payment'].includes(order.status) && order.destination && (
                         <Card className="overflow-hidden mb-6 border-0 shadow-warm">
                             <GoogleMap
                                 className="h-64 w-full"
@@ -155,6 +166,7 @@ const OrderTracker = () => {
                             <div>
                                 <h3 className="font-semibold text-lg">{currentStep.label}</h3>
                                 <p className="text-muted-foreground text-sm">
+                                    {order.status === 'awaiting_payment' && "Your order will go to the kitchen as soon as it's paid."}
                                     {order.status === 'received' && "We've received your order and sent it to the kitchen."}
                                     {order.status === 'preparing' && "Our chefs are preparing your delicious meal."}
                                     {order.status === 'delivery' && "Your driver is on the way!"}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, BellRing, ChefHat, Clock, Eye, Loader2, PackageCheck, RefreshCw, Truck, Wallet, XCircle } from 'lucide-react';
+import { BadgeCheck, BellRing, ChefHat, Clock, CreditCard, Eye, Loader2, PackageCheck, RefreshCw, Truck, Wallet, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 const STAGE: Record<string, { label: string; className: string }> = {
+    awaiting_payment: { label: 'Unpaid', className: 'bg-muted text-muted-foreground' },
     received: { label: 'New', className: 'bg-amber-100 text-amber-900' },
     preparing: { label: 'Cooking', className: 'bg-orange-100 text-orange-900' },
     delivery: { label: 'On its way', className: 'bg-sky-100 text-sky-900' },
@@ -19,6 +20,7 @@ const STAGE: Record<string, { label: string; className: string }> = {
     cancelled: { label: 'Cancelled', className: 'bg-muted text-muted-foreground' },
 };
 const COLUMNS = [
+    { status: 'awaiting_payment', title: 'Awaiting payment', icon: CreditCard },
     { status: 'received', title: 'New', icon: Clock },
     { status: 'preparing', title: 'Cooking', icon: ChefHat },
     { status: 'delivery', title: 'On its way', icon: Truck },
@@ -29,6 +31,7 @@ interface ChefStage { chefId: number; chefName: string; status: string }
 interface AdminOrder {
     id: number;
     status: string;
+    paymentStatus?: string;
     total: number;
     createdAt: string;
     deliveryAddress?: { firstName?: string; lastName?: string; method?: string } | null;
@@ -108,7 +111,7 @@ const LiveOrders = () => {
     const board = useMemo(() => {
         const chefs = new Map<string, Record<string, number>>();
         for (const order of orders) {
-            if (order.status === 'cancelled') continue;
+            if (order.status === 'cancelled' || order.status === 'awaiting_payment') continue;
             for (const p of order.chefProgress ?? []) {
                 const row = chefs.get(p.chefName) ?? { received: 0, preparing: 0, delivery: 0, completed: 0 };
                 row[p.status] = (row[p.status] ?? 0) + 1;
@@ -174,15 +177,24 @@ const LiveOrders = () => {
                                             ))}
                                         </ul>
                                     )}
-                                    <div className="flex justify-between border-t pt-2 font-bold"><span>Total</span><span>{money(order.total)}</span></div>
+                                    <div className="flex justify-between border-t pt-2 font-bold">
+                                        <span>Total</span>
+                                        <span className="flex items-center gap-2">
+                                            {order.paymentStatus === 'paid' && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-900">Paid by card</span>}
+                                            {order.paymentStatus === 'refunded' && <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Refunded</span>}
+                                            {money(order.total)}
+                                        </span>
+                                    </div>
                                     <div className="flex flex-wrap gap-1">
                                         <Button asChild variant="ghost" size="sm" className="h-10"><Link to={`/order-tracker/${order.id}`}><Eye className="mr-1 h-3 w-3" />View</Link></Button>
                                         {!['cancelled', 'completed'].includes(order.status) && (
-                                            <Button variant="ghost" size="sm" className="h-10 text-destructive" onClick={() => { if (confirm(`Cancel order #${order.id}? The customer and chefs will be told.`)) setStatus.mutate({ id: order.id, status: 'cancelled' }); }}>Cancel</Button>
+                                            <Button variant="ghost" size="sm" className="h-10 text-destructive" onClick={() => { if (confirm(order.paymentStatus === 'paid' ? `Cancel order #${order.id} and refund ${money(order.total)} to the customer's card? The customer and chefs will be told.` : `Cancel order #${order.id}? The customer and chefs will be told.`)) setStatus.mutate({ id: order.id, status: 'cancelled' }); }}>Cancel</Button>
                                         )}
                                         {order.status === 'cancelled' && (
                                             <>
-                                                <Button variant="outline" size="sm" className="h-10" onClick={() => setStatus.mutate({ id: order.id, status: 'received' })}>Reopen</Button>
+                                                {!['refunded', 'failed', 'awaiting'].includes(order.paymentStatus ?? '') && (
+                                                    <Button variant="outline" size="sm" className="h-10" onClick={() => setStatus.mutate({ id: order.id, status: 'received' })}>Reopen</Button>
+                                                )}
                                                 <Button variant="ghost" size="sm" className="h-10 text-destructive" onClick={() => { if (confirm(`Permanently delete order #${order.id}?`)) remove.mutate(order.id); }}>Delete</Button>
                                             </>
                                         )}

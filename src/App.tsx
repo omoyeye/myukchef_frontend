@@ -30,6 +30,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const IntegrationSettings = lazy(() => import("./pages/admin/IntegrationSettings"));
 const SearchOrder = lazy(() => import("./pages/SearchOrder"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="meal-plans" element={<MealPlanManagement />} />
                 <Route path="support" element={<SupportInbox />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="payments-email" element={<IntegrationSettings />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

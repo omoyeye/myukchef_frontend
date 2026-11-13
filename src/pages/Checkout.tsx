@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, CheckCircle2, Ticket } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Lock, Ticket } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/layout/Layout';
 import SEO from '@/components/common/SEO';
@@ -115,6 +115,14 @@ const Checkout = () => {
         return Math.max(0, totalBeforeDiscount - discountValue);
     };
 
+    // With Stripe switched on, the customer pays by card before the order reaches the chefs.
+    const { data: payment } = useQuery<{ cardPayments: boolean; testMode: boolean }>({
+        queryKey: ['payment-config'],
+        queryFn: () => api.get('/orders/payment-config'),
+        staleTime: 60_000,
+    });
+    const cardPayments = !!payment?.cardPayments;
+
     const onSubmit = async (data: CheckoutFormValues) => {
         setIsSubmitting(true);
 
@@ -136,7 +144,13 @@ const Checkout = () => {
             };
 
             const responseData = await api.post('/orders', orderPayload);
-            
+            if (responseData.checkoutUrl) {
+                // Off to Stripe's secure page. If they back out, the tracker lets them pay later.
+                clearCart();
+                window.location.assign(responseData.checkoutUrl);
+                return;
+            }
+
             setIsSubmitting(false);
             setOrderPlaced(true);
             setTrackingLink(`/order-tracker/${responseData.id}?t=${responseData.trackingToken}`);
@@ -500,8 +514,10 @@ const Checkout = () => {
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                                                Processing...
+                                                {cardPayments ? 'Opening secure payment...' : 'Processing...'}
                                             </>
+                                        ) : cardPayments ? (
+                                            <><Lock className="mr-3 h-5 w-5" />Pay · {formatPrice(calculateDiscountedTotal())}</>
                                         ) : (
                                             `Place order · ${formatPrice(calculateDiscountedTotal())}`
                                         )}
@@ -511,7 +527,9 @@ const Checkout = () => {
 
                             <div className="px-6 text-center">
                                 <p className="text-xs text-muted-foreground leading-relaxed italic">
-                                    Your order will be prepared immediately after confirmation. Please ensure your delivery details are correct.
+                                    {cardPayments
+                                        ? <>You'll pay by card on Stripe's secure page. Your order goes to the chefs once it's paid.{payment?.testMode ? ' (Test mode: no real money is taken.)' : ''}</>
+                                        : 'Your order will be prepared immediately after confirmation. Please ensure your delivery details are correct.'}
                                 </p>
                             </div>
                         </div>
