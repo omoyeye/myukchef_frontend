@@ -17,6 +17,8 @@ export const CartDrawer = () => {
     itemCount,
     subtotal,
     deliveryFee,
+    deliveryNote,
+    nextDeliveryBand,
     serviceFee,
     total,
   } = useCart();
@@ -148,6 +150,10 @@ export const CartDrawer = () => {
                 <span className="text-muted-foreground">Delivery fee</span>
                 <span>{formatPrice(deliveryFee)}</span>
               </div>
+              {deliveryNote && <p className="text-xs text-muted-foreground">{deliveryNote}</p>}
+              {nextDeliveryBand && (
+                <p className="text-xs font-medium text-primary">Add {formatPrice(nextDeliveryBand.spendMore)} more for {nextDeliveryBand.fee === 0 ? "free delivery" : `${formatPrice(nextDeliveryBand.fee)} delivery`}.</p>
+              )}
               <p className="text-xs text-muted-foreground">Food includes {formatPrice(serviceFee)} service fee ({serviceFeePercent}%).</p>
               <Separator />
               <div className="flex justify-between font-semibold text-lg">

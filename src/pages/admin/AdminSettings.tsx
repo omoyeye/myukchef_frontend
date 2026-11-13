@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Save } from 'lucide-react';
+import { DeliveryTiersEditor } from '@/components/admin/DeliveryTiersEditor';
 
 const AdminSettings = () => {
     const { user } = useAuth();
@@ -326,6 +327,7 @@ const AdminSettings = () => {
                                     onChange={(e) => setDeliveryConfig({ ...deliveryConfig, freeOver: parseFloat(e.target.value) })}
                                 />
                             </div>
+                            <DeliveryTiersEditor value={deliveryConfig.tiers} onChange={(tiers) => setDeliveryConfig({ ...deliveryConfig, tiers })} />
                         </CardContent>
                         <CardFooter className="border-t bg-muted/50 px-6 py-4">
                             <Button

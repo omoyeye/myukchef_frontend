@@ -20,14 +20,14 @@ export const COMPLIANCE_GROUPS = [
     },
     {
         title: "Food safety",
-        hint: "Food businesses, including home cooks, need to register with their local council before trading.",
+        hint: "Food businesses, including home cooks, need to register with their local council before trading. Upload your certificates above so we can verify them.",
         fields: [
-            ["localAuthority", "Council you're registered with"], ["registeredOn", "Date you registered", "date"], ["hygieneCertificate", "Food hygiene certificate (course and level)"], ["insurance", "Public liability insurer (optional)"],
+            ["localAuthority", "Council you're registered with"], ["registeredOn", "Date you registered", "date"], ["hygieneCertificate", "Food hygiene course and level (upload it above too)"], ["insurance", "Public liability insurer (optional)"],
         ],
     },
     {
         title: "Where to pay you",
-        hint: "MYUKCHEF sends your event payouts here.",
+        hint: "If you haven't connected Stripe under Payouts, MYUKCHEF pays your invoices to this account by bank transfer.",
         fields: [
             ["bankAccountName", "Account name"], ["bankSortCode", "Sort code"], ["bankAccountNumber", "Account number"],
         ],

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { AllergenPicker } from "@/components/common/AllergenPicker";
 import { KitchenVideoField } from "@/components/plans/KitchenVideoField";
 import { COMPLIANCE_GROUPS } from "@/components/plans/ChefCompliance";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { AdminCredentials } from "@/components/credentials/AdminCredentials";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ExternalLink, Loader2, Pause, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ const ImageField = ({ id, label, value, onChange }: { id: string; label: string;
 
 const ChefManagement = () => {
     const qc = useQueryClient();
+    const [params, setParams] = useSearchParams();
     const [complianceChef, setComplianceChef] = useState<any>(null);
     const { data: complianceRecord } = useQuery<any>({ queryKey: ["admin-compliance", complianceChef?.id], queryFn: () => api.get(`/chefs/admin/${complianceChef.id}/compliance`), enabled: !!complianceChef });
     const verify = useMutation({
@@ -121,15 +123,17 @@ const ChefManagement = () => {
     if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
     const pending = dishes.filter((d) => d.status === "pending").length;
+    const tab = ["dishes", "credentials"].includes(params.get("tab") ?? "") ? params.get("tab")! : "chefs";
 
     return (
         <div>
             <h1 className="mb-4 text-2xl font-bold">Chefs & Chef Dishes</h1>
-            <Tabs defaultValue="chefs">
+            <Tabs value={tab} onValueChange={(v) => setParams(v === "chefs" ? {} : { tab: v })}>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <TabsList className="h-11">
                         <TabsTrigger className="h-9" value="chefs">Chefs ({chefs.length})</TabsTrigger>
                         <TabsTrigger className="h-9" value="dishes">Dishes ({dishes.length}{pending ? `, ${pending} to review` : ""})</TabsTrigger>
+                        <TabsTrigger className="h-9" value="credentials">Certificates</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -171,6 +175,8 @@ const ChefManagement = () => {
                         </CardContent>
                     </Card>
                 </TabsContent>
+
+                <TabsContent value="credentials"><AdminCredentials /></TabsContent>
 
                 <TabsContent value="dishes" className="space-y-3">
                     <Button className="h-11 md:h-10" disabled={chefs.length === 0} onClick={() => setDishForm({ ...EMPTY_DISH, chefId: String(chefs[0]?.id ?? "") })}><Plus className="mr-2 h-4 w-4" />Add dish</Button>

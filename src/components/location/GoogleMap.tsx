@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
+import { saveConsent, useConsent } from "@/lib/consent";
 
 export interface MapMarker {
     lat: number;
@@ -41,9 +43,12 @@ export const GoogleMap = ({ markers, className = "h-72 w-full rounded-2xl" }: { 
     const pins = useRef<any[]>([]);
     const [failed, setFailed] = useState(false);
     const markersKey = JSON.stringify(markers.map(({ lat, lng, title, kind }) => [lat, lng, title, kind]));
+    // Google's scripts only load once the person has agreed to map cookies.
+    const consent = useConsent();
+    const allowed = !!consent?.maps;
 
     useEffect(() => {
-        if (!API_KEY || !container.current || markers.length === 0) return;
+        if (!API_KEY || !allowed || !container.current || markers.length === 0) return;
         let cancelled = false;
 
         (async () => {
@@ -100,8 +105,19 @@ export const GoogleMap = ({ markers, className = "h-72 w-full rounded-2xl" }: { 
 
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [markersKey]);
+    }, [markersKey, allowed]);
 
     if (!API_KEY || failed || markers.length === 0) return null;
+    if (!allowed) {
+        return (
+            <div className={`${className} flex flex-col items-center justify-center gap-2 bg-secondary/60 p-4 text-center`} role="region" aria-label="Map">
+                <MapPin className="h-6 w-6 text-primary" aria-hidden />
+                <p className="max-w-xs text-sm text-muted-foreground">The map uses Google Maps, which may set cookies.</p>
+                <button type="button" className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground" onClick={() => saveConsent({ maps: true })}>
+                    Show the map
+                </button>
+            </div>
+        );
+    }
     return <div ref={container} className={className} role="region" aria-label="Map" />;
 };

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { deliveryFor } from '@/lib/delivery';
 import { CartItem, MenuItem, Modifier } from '@/types/menu';
 
 interface CartState {
@@ -110,6 +111,10 @@ interface CartContextType {
   itemCount: number;
   subtotal: number;
   deliveryFee: number;
+  /** How bigger orders are delivered, when their band has a note. */
+  deliveryNote: string | null;
+  /** How much more to spend for cheaper delivery, if a cheaper band exists. */
+  nextDeliveryBand: { spendMore: number; fee: number } | null;
   serviceFee: number;
   total: number;
 }
@@ -170,10 +175,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Same defaults and rules as the server, which has the final say on the total.
   const { data: settings } = useQuery<any>({ queryKey: ['site-settings'], queryFn: () => api.get('/settings'), staleTime: 300_000 });
   const delivery = settings?.delivery_config ?? {};
-  const fee = Number(delivery.fee ?? 3.99);
-  const freeOver = Number(delivery.freeOver ?? 0);
   const serviceFee = subtotal * (Number(delivery.serviceFeePercent ?? 10) / 100);
-  const deliveryFee = subtotal === 0 || (freeOver > 0 && subtotal >= freeOver) ? 0 : fee;
+  // Bigger orders can fall in a cheaper delivery band set by the Super Admin.
+  const { fee: deliveryFee, band: deliveryBand, next: nextDeliveryBand } = deliveryFor(subtotal, delivery);
   const total = subtotal + serviceFee + deliveryFee;
 
   return (
@@ -190,6 +194,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         itemCount,
         subtotal,
         deliveryFee,
+        deliveryNote: deliveryBand?.note || null,
+        nextDeliveryBand,
         serviceFee,
         total,
       }}

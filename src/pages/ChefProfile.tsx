@@ -11,6 +11,7 @@ import { RatingPill } from "@/components/reviews/Stars";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MenuCard } from "@/components/menu/MenuCard";
+import { VerifiedCredentials } from "@/components/credentials/VerifiedCredentials";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { shareLink } from "@/lib/share";
@@ -145,6 +146,7 @@ const ChefProfile = () => {
                     <ul className="mt-6 flex flex-wrap gap-2 text-sm">
                         <li className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/10 px-3 py-1.5"><BadgeCheck className="h-4 w-4 text-primary" />Reviewed by {BRAND_NAME}</li>
                         {chef.hygieneRating !== null && chef.hygieneRating !== undefined && <li className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/10 px-3 py-1.5"><ShieldCheck className="h-4 w-4 text-primary" />Food hygiene rating {chef.hygieneRating}/5</li>}
+                        {chef.hygieneVerified && <li className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/10 px-3 py-1.5"><ShieldCheck className="h-4 w-4 text-primary" />Food hygiene certificate verified</li>}
                         {chef.yearsExperience ? <li className="rounded-full bg-ink-foreground/10 px-3 py-1.5">{chef.yearsExperience} years' experience</li> : null}
                         {chef.planHouseholds > 0 && <li className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/10 px-3 py-1.5"><Users className="h-4 w-4 text-primary" />Cooking for {chef.planHouseholds} {chef.planHouseholds === 1 ? "household" : "households"}</li>}
                     </ul>
@@ -185,6 +187,8 @@ const ChefProfile = () => {
                         </div>
                     </section>
                 )}
+
+                <VerifiedCredentials credentials={chef.credentials ?? []} firstName={firstName} />
 
                 <Tabs value={tab} onValueChange={setTab} className="mt-8">
                     <TabsList className="grid h-11 w-full grid-cols-3 sm:inline-grid sm:w-auto">

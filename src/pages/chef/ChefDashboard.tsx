@@ -8,6 +8,8 @@ import { ChefQuotes, useChefQuotes } from "@/components/plans/ChefQuotes";
 import { PortalItem, PortalShell } from "@/components/layout/PortalShell";
 import { AllergenPicker } from "@/components/common/AllergenPicker";
 import { ChefCompliance } from "@/components/plans/ChefCompliance";
+import { ChefPayouts } from "@/components/payouts/ChefPayouts";
+import { ChefCredentials } from "@/components/credentials/ChefCredentials";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { allergenSummary } from "@/lib/allergens";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,7 +25,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import SEO from "@/components/common/SEO";
-import { ShieldCheck, CalendarDays, CalendarHeart, ChefHat, ExternalLink, LayoutDashboard, Loader2, Plus, ShoppingBag, Star, Trash2, UserRound, Upload, UtensilsCrossed, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { ShieldCheck, CalendarDays, CalendarHeart, ChefHat, ExternalLink, LayoutDashboard, Loader2, Plus, ShoppingBag, Star, Trash2, UserRound, Wallet, Upload, UtensilsCrossed, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Chef {
@@ -206,7 +208,8 @@ const ChefDashboard = () => {
         section(UtensilsCrossed, `My dishes (${products.length})`, "products"),
         ...(isApproved ? [section(Plus, "Add a dish", "add")] : []),
         section(Star, "Reviews", "reviews"),
-        section(ShieldCheck, "Safety and payouts", "compliance"),
+        section(Wallet, "Payouts", "payouts"),
+        section(ShieldCheck, "Safety and certificates", "compliance"),
         section(UserRound, "My profile", "profile"),
     ];
 
@@ -273,7 +276,8 @@ const ChefDashboard = () => {
 
                     <TabsContent value="plans"><ChefPlansPanel /></TabsContent>
                     <TabsContent value="reviews"><ChefReviewsPanel /></TabsContent>
-                    <TabsContent value="compliance"><ChefCompliance /></TabsContent>
+                    <TabsContent value="payouts"><ChefPayouts /></TabsContent>
+                    <TabsContent value="compliance"><div className="space-y-10"><ChefCredentials /><ChefCompliance /></div></TabsContent>
 
                     {/* MY PRODUCTS */}
                     <TabsContent value="products" className="space-y-4">

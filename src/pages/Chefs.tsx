@@ -10,6 +10,7 @@ import SEO from "@/components/common/SEO";
 import { LocationPicker } from "@/components/location/LocationPicker";
 import { GoogleMap, hasGoogleMaps, MapMarker } from "@/components/location/GoogleMap";
 import { RatingPill } from "@/components/reviews/Stars";
+import { HygieneBadge } from "@/components/credentials/VerifiedCredentials";
 import { chefsPath, formatMiles, useUserLocation } from "@/lib/location";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +117,7 @@ const Chefs = () => {
                                             <RatingPill rating={c.rating} count={c.reviewCount} className="shrink-0" />
                                         </div>
                                         {c.specialty && <p className="text-sm text-muted-foreground">{c.specialty}</p>}
+                                        {c.hygieneVerified && <HygieneBadge className="mt-1 self-start" />}
                                         {c.bio && <p className="mt-2 line-clamp-2 flex-1 text-sm text-muted-foreground">{c.bio}</p>}
                                         <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
                                             {c.location && <li className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.location}</li>}

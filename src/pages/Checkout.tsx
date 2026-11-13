@@ -45,7 +45,7 @@ const checkoutSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 const Checkout = () => {
-    const { items, total, subtotal, deliveryFee, serviceFee, clearCart } = useCart();
+    const { items, total, subtotal, deliveryFee, deliveryNote, nextDeliveryBand, serviceFee, clearCart } = useCart();
     const { user } = useAuth();
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -449,6 +449,10 @@ const Checkout = () => {
                                             <span className="text-muted-foreground font-medium">Delivery fee</span>
                                             <span className="font-bold text-green-600">{shownDeliveryFee === 0 ? "FREE" : formatPrice(shownDeliveryFee)}</span>
                                         </div>
+                                        {deliveryMethod === 'delivery' && deliveryNote && <p className="text-xs text-muted-foreground">{deliveryNote}</p>}
+                                        {deliveryMethod === 'delivery' && nextDeliveryBand && (
+                                            <p className="text-xs font-medium text-primary">Add {formatPrice(nextDeliveryBand.spendMore)} more for {nextDeliveryBand.fee === 0 ? 'free delivery' : `${formatPrice(nextDeliveryBand.fee)} delivery`}.</p>
+                                        )}
                                         <p className="text-xs text-muted-foreground">Food includes {formatPrice(serviceFee)} service fee ({serviceFeePercent}%).</p>
                                         <div className="rounded-xl bg-secondary/60 p-3 text-xs">
                                             <p className="mb-1 font-semibold">Allergen information</p>

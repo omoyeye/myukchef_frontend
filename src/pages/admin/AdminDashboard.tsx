@@ -11,20 +11,21 @@ const NeedsAttention = () => {
     const { data: dishes = [] } = useQuery<any[]>({ queryKey: ['admin-chef-products'], queryFn: () => api.get('/chefs/admin/products') });
     const { data: plans = [] } = useQuery<any[]>({ queryKey: ['admin-meal-plans'], queryFn: () => api.get('/meal-plans/admin/all') });
     const { data: events = [] } = useQuery<any[]>({ queryKey: ['admin-events'], queryFn: () => api.get('/events/admin/all') });
-    const { data: orderPayouts = [] } = useQuery<any[]>({ queryKey: ['admin-order-payouts'], queryFn: () => api.get('/orders/admin/payouts') });
+    const { data: payouts } = useQuery<{ invoices: { status: string }[]; deliveries: { customerIssue: string | null }[] }>({ queryKey: ['admin-payouts'], queryFn: () => api.get('/payouts/admin') });
     const tiles = [
         { label: 'Chefs to review', value: chefs.filter((c) => c.status === 'pending').length, icon: ChefHat, to: '/admin/chefs' },
         { label: 'Chef checks to verify', value: chefs.filter((c) => c.status === 'approved' && !c.complianceVerified).length, icon: ShieldCheck, to: '/admin/chefs' },
         { label: 'Dishes to review', value: dishes.filter((d) => d.status === 'pending').length, icon: UtensilsCrossed, to: '/admin/chefs' },
         { label: 'Plans waiting for a chef', value: plans.filter((p) => p.status === 'requested').length, icon: CalendarDays, to: '/admin/meal-plans' },
         { label: 'Event payments to check', value: events.filter((e) => e.paymentStatus === 'submitted').length, icon: CalendarHeart, to: '/admin/events' },
-        { label: 'Order payouts to check', value: orderPayouts.filter((p) => p.payoutStatus !== 'paid').length, icon: Banknote, to: '/admin/orders?tab=payouts' },
+        { label: 'Chef invoices to pay', value: (payouts?.invoices ?? []).filter((i) => i.status === 'submitted').length, icon: Banknote, to: '/admin/orders?tab=payouts' },
+        { label: 'Delivery problems', value: (payouts?.deliveries ?? []).filter((d) => d.customerIssue).length, icon: Banknote, to: '/admin/orders?tab=payouts' },
         { label: 'Event payouts due', value: events.reduce((sum, e) => sum + (e.payoutsDue ?? 0), 0), icon: Banknote, to: '/admin/events' },
     ];
     return (
         <section aria-labelledby="attention-heading">
             <h3 id="attention-heading" className="mb-3 text-lg font-bold">Needs attention</h3>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                 {tiles.map((t) => (
                     <Link key={t.label} to={t.to} className={`rounded-2xl border bg-card p-4 transition-colors hover:border-primary ${t.value > 0 ? 'border-primary bg-primary/5' : ''}`}>
                         <t.icon className="h-5 w-5 text-primary" />

@@ -29,6 +29,27 @@ export async function uploadImage(file: File): Promise<string> {
     return data.url;
 }
 
+/** Uploads a certificate (PDF or photo) privately. Returns a reference to save, not a public link. */
+export async function uploadDocument(file: File): Promise<{ file: string; name: string }> {
+    if (file.size > 10 * 1024 * 1024) throw new Error('Please keep the file under 10MB.');
+    const formData = new FormData();
+    formData.append('document', file);
+    const response = await fetch(`${API_URL}/upload/document`, { method: 'POST', headers: authHeaders(), body: formData });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Upload failed');
+    return data;
+}
+
+/** Opens a private certificate in a new tab. It needs the sign-in, so it's fetched rather than linked. */
+export async function openCertificate(credentialId: number) {
+    const tab = window.open('', '_blank');
+    const response = await fetch(`${API_URL}/chefs/credentials/${credentialId}/document`, { headers: authHeaders() });
+    if (!response.ok) { tab?.close(); throw new Error('No copy on file'); }
+    const url = URL.createObjectURL(await response.blob());
+    if (tab) tab.location.href = url; else window.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** Longest kitchen video a chef can upload, in seconds. The server checks this too. */
 export const MAX_VIDEO_SECONDS = 60;
 

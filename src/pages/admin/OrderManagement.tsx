@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { AdminPayouts } from '@/components/payouts/AdminPayouts';
 
 const STAGE: Record<string, { label: string; className: string }> = {
     awaiting_payment: { label: 'Unpaid', className: 'bg-muted text-muted-foreground' },
@@ -38,19 +39,6 @@ interface AdminOrder {
     items: { id: number; quantity: number; product?: { name: string } | null }[];
     chefProgress?: ChefStage[];
 }
-interface Payout {
-    id: number;
-    orderId: number;
-    chefName: string;
-    deliveryProof: string | null;
-    deliveredAt: string | null;
-    customerConfirmedAt: string | null;
-    customerIssue: string | null;
-    payoutAmount: number;
-    payoutStatus: string;
-    paidAt: string | null;
-    bank: { name: string; sortCode: string; accountNumber: string } | null;
-}
 const money = (n: number) => `£${Number(n).toFixed(2)}`;
 const Pill = ({ status }: { status: string }) => {
     const s = STAGE[status] ?? STAGE.received;
@@ -76,7 +64,7 @@ const OrderManagement = () => {
                     <TabsTrigger value="payouts" className="h-9 px-4">Chef payouts</TabsTrigger>
                 </TabsList>
                 <TabsContent value="orders" className="mt-4"><LiveOrders /></TabsContent>
-                <TabsContent value="payouts" className="mt-4"><Payouts /></TabsContent>
+                <TabsContent value="payouts" className="mt-4"><AdminPayouts /></TabsContent>
             </Tabs>
         </div>
     );
@@ -205,81 +193,6 @@ const LiveOrders = () => {
                     );
                 })}
             </div>
-        </div>
-    );
-};
-
-const Payouts = () => {
-    const qc = useQueryClient();
-    const [paying, setPaying] = useState<Payout | null>(null);
-    const [photo, setPhoto] = useState<string | null>(null);
-    const { data: payouts = [], isLoading } = useQuery<Payout[]>({ queryKey: ['admin-order-payouts'], queryFn: () => api.get('/orders/admin/payouts'), refetchInterval: 30_000 });
-    const pay = useMutation({
-        mutationFn: ({ id, paid }: { id: number; paid: boolean }) => api.patch(`/orders/admin/payouts/${id}`, { paid }),
-        onSuccess: (_d, v) => { toast.success(v.paid ? 'Marked as paid. The chef has been told.' : 'Payment taken back'); setPaying(null); qc.invalidateQueries({ queryKey: ['admin-order-payouts'] }); },
-        onError: (e: Error) => toast.error(e.message),
-    });
-
-    if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    const due = payouts.filter((p) => p.payoutStatus !== 'paid');
-    const owed = due.reduce((sum, p) => sum + p.payoutAmount, 0);
-    return (
-        <div className="space-y-4">
-            <p className="rounded-2xl bg-secondary p-4 text-sm"><span className="font-bold">{money(owed)}</span> owed to chefs for {due.length} delivered order{due.length === 1 ? '' : 's'}. Check each delivery photo, pay the chef by bank transfer, then mark it paid.</p>
-            {payouts.length === 0 ? <p className="rounded-3xl border border-dashed p-10 text-center text-muted-foreground">Nothing delivered yet.</p> : (
-                <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {payouts.map((p) => (
-                        <li key={p.id} className={cn('space-y-3 rounded-2xl border bg-card p-4 text-sm', p.payoutStatus === 'paid' && 'opacity-70')}>
-                            <div className="flex items-start justify-between gap-2">
-                                <div>
-                                    <p className="font-bold">{p.chefName}</p>
-                                    <p className="text-muted-foreground">Order #{p.orderId} · {p.deliveredAt ? format(new Date(p.deliveredAt), 'd MMM, HH:mm') : ''}</p>
-                                </div>
-                                <span className="font-display text-xl font-extrabold">{money(p.payoutAmount)}</span>
-                            </div>
-                            {p.deliveryProof && (
-                                <button type="button" className="block w-full overflow-hidden rounded-xl" onClick={() => setPhoto(p.deliveryProof)} aria-label={`Open ${p.chefName}'s delivery photo`}>
-                                    <img src={p.deliveryProof} alt="" className="h-40 w-full object-cover" loading="lazy" />
-                                </button>
-                            )}
-                            <p className={cn('flex items-center gap-2', p.customerIssue ? 'text-destructive' : p.customerConfirmedAt ? 'text-emerald-700' : 'text-muted-foreground')}>
-                                <BadgeCheck className="h-4 w-4 shrink-0" />
-                                {p.customerIssue ? `Problem reported: ${p.customerIssue}` : p.customerConfirmedAt ? 'Customer confirmed delivery' : 'Customer hasn\'t confirmed yet'}
-                            </p>
-                            <p className={cn('text-xs', p.bank ? 'text-muted-foreground' : 'text-destructive')}>{p.bank ? `${p.bank.name}, ${p.bank.sortCode}, ${p.bank.accountNumber}` : 'No bank details yet. Ask the chef to add them under Safety and payouts.'}</p>
-                            {p.payoutStatus === 'paid' ? (
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="font-semibold text-emerald-700">Paid {p.paidAt ? format(new Date(p.paidAt), 'd MMM') : ''}</span>
-                                    <Button variant="ghost" size="sm" className="h-10" onClick={() => pay.mutate({ id: p.id, paid: false })}>Undo</Button>
-                                </div>
-                            ) : (
-                                <Button className="h-11 w-full" onClick={() => setPaying(p)}><Wallet className="mr-2 h-4 w-4" />Mark as paid</Button>
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Pay {paying?.chefName} {paying ? money(paying.payoutAmount) : ''}?</DialogTitle>
-                        <DialogDescription>
-                            {paying?.customerIssue ? 'The customer reported a problem with this order. Make sure it is resolved first. ' : paying?.customerConfirmedAt ? 'The customer has confirmed delivery. ' : 'The customer hasn\'t confirmed yet, so check the delivery photo carefully. '}
-                            Send the money by bank transfer first, then confirm here. The chef will be told.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="gap-2">
-                        <Button variant="outline" className="h-11" onClick={() => setPaying(null)}>Not yet</Button>
-                        <Button className="h-11" disabled={pay.isPending} onClick={() => paying && pay.mutate({ id: paying.id, paid: true })}>I've paid the chef</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-            <Dialog open={!!photo} onOpenChange={(o) => !o && setPhoto(null)}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader><DialogTitle>Delivery photo</DialogTitle></DialogHeader>
-                    {photo && <img src={photo} alt="Delivery evidence" className="max-h-[70vh] w-full rounded-xl object-contain" />}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };

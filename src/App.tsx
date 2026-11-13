@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
+import { CookieConsent } from "@/components/layout/CookieConsent";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ const SearchOrder = lazy(() => import("./pages/SearchOrder"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const AllergenInfo = lazy(() => import("./pages/AllergenInfo"));
 const Support = lazy(() => import("./pages/Support"));
@@ -44,6 +46,7 @@ const Recommend = lazy(() => import("./pages/Recommend"));
 const ChefRegister = lazy(() => import("./pages/chef/ChefRegister"));
 const ChefLogin = lazy(() => import("./pages/chef/ChefLogin"));
 const ChefDashboard = lazy(() => import("./pages/chef/ChefDashboard"));
+const InvoiceView = lazy(() => import("./pages/InvoiceView"));
 const ChefManagement = lazy(() => import("./pages/admin/ChefManagement"));
 const EventManagement = lazy(() => import("./pages/admin/EventManagement"));
 const ChefProfile = lazy(() => import("./pages/ChefProfile"));
@@ -74,6 +77,7 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <OfflineBanner />
+            <CookieConsent />
             <AppErrorBoundary>
             <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -86,6 +90,7 @@ const App = () => (
               <Route path="/order-tracker/:id" element={<OrderTracker />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/allergens" element={<AllergenInfo />} />
               <Route path="/support" element={<Support />} />
@@ -107,6 +112,8 @@ const App = () => (
               <Route path="/chef/forgot-password" element={<ForgotPassword portal="chef" />} />
               <Route path="/chef/reset-password" element={<ResetPassword portal="chef" />} />
               <Route path="/chef/dashboard" element={<ChefDashboard />} />
+              <Route path="/chef/receipts/:id" element={<InvoiceView />} />
+              <Route path="/admin/invoices/:id" element={<InvoiceView />} />
 
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

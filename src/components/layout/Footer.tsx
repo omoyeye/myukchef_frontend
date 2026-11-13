@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { openCookieSettings } from "@/lib/consent";
 import { CompanyDetails } from '@/components/common/CompanyDetails';
 import { Instagram, Twitter, Facebook, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -152,6 +153,12 @@ export const Footer = () => {
               <Link to="/allergens" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Allergen Info
               </Link>
+              <Link to="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Cookie Policy
+              </Link>
+              <button type="button" onClick={openCookieSettings} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Cookie settings
+              </button>
             </div>
           </div>
         </div>
