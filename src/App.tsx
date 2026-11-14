@@ -34,6 +34,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const IntegrationSettings = lazy(() => import("./pages/admin/IntegrationSettings"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
+const MessageTemplates = lazy(() => import("./pages/admin/MessageTemplates"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const ReferFriend = lazy(() => import("./pages/ReferFriend"));
 const SearchOrder = lazy(() => import("./pages/SearchOrder"));
@@ -149,6 +150,7 @@ const App = () => (
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="payments-email" element={<IntegrationSettings />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="messages" element={<MessageTemplates />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

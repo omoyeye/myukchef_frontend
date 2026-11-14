@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api, uploadImage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,13 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Save } from 'lucide-react';
+import { ImagePlus, Loader2, Save } from 'lucide-react';
 import { DeliveryTiersEditor } from '@/components/admin/DeliveryTiersEditor';
 import { BusinessRules } from '@/components/admin/BusinessRules';
 
 const AdminSettings = () => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [logoUploading, setLogoUploading] = useState(false);
 
     const { data: settings = {}, isLoading } = useQuery({
         queryKey: ['admin-settings'],
@@ -111,6 +112,38 @@ const AdminSettings = () => {
                             <CardDescription>Manage your restaurant's public information.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-neutral-900">
+                                    <img src={storeInfo.logo || '/logo.png'} alt="Logo" className="max-h-full max-w-full object-contain" />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="store_logo" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                                        {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                                        {storeInfo.logo ? 'Change logo' : 'Upload logo'}
+                                    </Label>
+                                    <input
+                                        id="store_logo"
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="sr-only"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            e.target.value = '';
+                                            if (!file) return;
+                                            setLogoUploading(true);
+                                            try {
+                                                setStoreInfo({ ...storeInfo, logo: await uploadImage(file) });
+                                                toast.success('Logo uploaded. Save the profile to use it.');
+                                            } catch (error) {
+                                                toast.error(error instanceof Error ? error.message : 'Upload failed');
+                                            } finally {
+                                                setLogoUploading(false);
+                                            }
+                                        }}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Shown at the top of every email. A PNG with a see-through background works best.</p>
+                                </div>
+                            </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="store_name">Store Name</Label>
                                 <Input
@@ -169,7 +202,7 @@ const AdminSettings = () => {
                             <CardDescription>Manage your social presence and opening times shown in the footer.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="instagram">Instagram URL</Label>
                                     <Input
@@ -195,6 +228,15 @@ const AdminSettings = () => {
                                         placeholder="https://facebook.com/..."
                                         value={footerInfo.socials?.facebook || ""}
                                         onChange={(e) => setFooterInfo({ ...footerInfo, socials: { ...footerInfo.socials, facebook: e.target.value } })}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok">TikTok URL</Label>
+                                    <Input
+                                        id="tiktok"
+                                        placeholder="https://tiktok.com/@..."
+                                        value={footerInfo.socials?.tiktok || ""}
+                                        onChange={(e) => setFooterInfo({ ...footerInfo, socials: { ...footerInfo.socials, tiktok: e.target.value } })}
                                     />
                                 </div>
                             </div>
