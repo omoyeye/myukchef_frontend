@@ -40,8 +40,8 @@ const Register = () => {
         setIsLoading(true);
 
         try {
-            await register(formData.name, formData.email, formData.password);
-            toast.success("Account created successfully!");
+            await register(formData.name, formData.email, formData.password, searchParams.get("ref") ?? undefined);
+            toast.success("Account created", { description: "We've emailed you a link to confirm your address." });
             navigate(safeRedirect(searchParams.get("redirect")));
         } catch (error: any) {
             toast.error(error.message || "Failed to register");

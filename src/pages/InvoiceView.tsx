@@ -84,7 +84,11 @@ const InvoiceView = () => {
                         </thead>
                         <tbody>
                             <tr className="border-b"><td className="py-2">Food sales: {invoice.description}</td><td className="py-2 text-right">{money(invoice.grossAmount)}</td></tr>
-                            <tr className="border-b"><td className="py-2">MYUKCHEF commission ({invoice.commissionPercent}%)</td><td className="py-2 text-right">− {money(invoice.commissionAmount)}</td></tr>
+                            <tr className="border-b">
+                                <td className="py-2">MYUKCHEF commission ({invoice.commissionPercent}%){invoice.commissionVat ? <span className="block text-xs text-muted-foreground">Includes VAT of {money(invoice.commissionVat)}</span> : null}</td>
+                                <td className="py-2 text-right">− {money(invoice.commissionAmount)}</td>
+                            </tr>
+                            {invoice.tipAmount ? <tr className="border-b"><td className="py-2">Customer tip (no commission)</td><td className="py-2 text-right">+ {money(invoice.tipAmount)}</td></tr> : null}
                         </tbody>
                         <tfoot>
                             <tr><td className="pt-3 font-bold">{paid ? 'Paid to chef' : 'Due to chef'}</td><td className="pt-3 text-right text-xl font-black">{money(invoice.netAmount)}</td></tr>

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { BestReview, ChefGallery } from "@/components/chefs/ChefHighlights";
+import { nextOpenLabel } from "@/lib/images";
+import { PageSkeleton } from "@/components/common/Skeletons";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, CalendarDays, CalendarHeart, ChefHat, Heart, MapPin, Share2, ShieldCheck, Sparkles, Users, Video } from "lucide-react";
@@ -47,7 +50,7 @@ const ChefProfile = () => {
         onError: (e: Error) => toast.error(e.message),
     });
 
-    if (isLoading) return <Layout><PageLoader /></Layout>;
+    if (isLoading) return <Layout><PageSkeleton /></Layout>;
 
     if (isError || !chef) {
         return (
@@ -113,7 +116,11 @@ const ChefProfile = () => {
                             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                                 <button type="button" onClick={() => setTab("reviews")} className="min-h-8"><RatingPill rating={chef.rating} count={chef.reviewCount} className="text-ink-foreground [&>span]:text-ink-foreground/70" /></button>
                                 {chef.location && <span className="inline-flex items-center gap-1 text-ink-foreground/75"><MapPin className="h-4 w-4" />{chef.location}</span>}
+                                {chef.paused ? <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-200">Not taking orders right now</span>
+                                    : chef.openNow ? <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">Cooking now</span>
+                                    : chef.nextOpen ? <span className="rounded-full bg-ink-foreground/10 px-2.5 py-0.5 text-xs font-semibold">{nextOpenLabel(chef.nextOpen)}</span> : null}
                             </div>
+                            <BestReview chefId={chef.id} firstName={firstName} />
                         </div>
                         <div className="flex gap-2 sm:self-start">
                             <Button
@@ -189,6 +196,7 @@ const ChefProfile = () => {
                 )}
 
                 <VerifiedCredentials credentials={chef.credentials ?? []} firstName={firstName} />
+                <ChefGallery dishes={dishes} firstName={firstName} />
 
                 <Tabs value={tab} onValueChange={setTab} className="mt-8">
                     <TabsList className="grid h-11 w-full grid-cols-3 sm:inline-grid sm:w-auto">

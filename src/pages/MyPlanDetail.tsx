@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PayByCardButton } from "@/components/orders/PayByCardButton";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
@@ -148,8 +149,12 @@ const WeekCard = ({ plan, week, isNext, onEdit, onSkip, onUnskip, busy }: { plan
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
                 <div className="min-w-0 text-sm">
                     {!off && <span className="font-bold">{money(week.total)}</span>}
+                    {!off && week.isPaid && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-900">Paid</span>}
                     {off && week.status !== "missed" && <span className="text-muted-foreground">No charge</span>}
                     {week.status === "missed" && <span className="text-muted-foreground">You won't be charged</span>}
+                    {!off && !week.isPaid && week.total > 0 && ["scheduled", "preparing", "out_for_delivery", "delivered"].includes(week.status) && (
+                        <span className="mt-2 block"><PayByCardButton className="h-10" payPath={`/meal-plans/${plan.id}/weeks/${week.id}/pay`} statusPath={`/meal-plans/${plan.id}/weeks/${week.id}/payment-status`} amount={week.total} refreshKey={["meal-plan", plan.id]} label="Pay this week" /></span>
+                    )}
                     {open && week.status === "scheduled" && week.lockAt && (
                         <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                             {week.locked ? <><Lock className="h-3 w-3" />Your chef is preparing this</> : <>Change by {format(new Date(week.lockAt), "EEE d MMM")}</>}

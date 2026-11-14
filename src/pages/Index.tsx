@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { HeroSlideshow } from "@/components/home/HeroSlideshow";
+import { Reveal } from "@/components/motion/Reveal";
 import { heroDelay } from '@/lib/motion';
 import { ArrowRight, Star, Flame, ShieldCheck, Clock, ChefHat, CalendarHeart, CalendarDays, Search, Truck, BadgeCheck, Sparkles, PartyPopper, SkipForward, Wallet, Repeat } from 'lucide-react';
 import { RatingPill } from '@/components/reviews/Stars';
@@ -115,7 +117,7 @@ const Index = () => {
 
           <div className="lg:col-span-5 relative">
             <div className="relative rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl ring-1 ring-ink-foreground/10 hero-frame">
-              <img src={heroChef} alt="A chef plating a freshly cooked meal" width={1280} height={1280} {...HERO_IMAGE_PRIORITY} className="hero-zoom h-full w-full object-cover" />
+              <HeroSlideshow first={heroChef} firstAlt="A chef plating a freshly cooked meal" dishes={popularItems.filter((d) => d.image)} imgProps={{ width: 1280, height: 1280, ...HERO_IMAGE_PRIORITY }} />
             </div>
             <Link to="/meal-plans" className="hero-chip hero-chip-late absolute right-3 top-4 sm:-right-4 sm:top-10 flex min-h-11 items-center gap-2 rounded-full bg-ink/90 px-4 text-sm font-bold text-ink-foreground shadow-xl ring-1 ring-ink-foreground/15 backdrop-blur">
               <CalendarDays className="h-4 w-4 text-primary" /> 1, 3 or 6 month plans
@@ -140,6 +142,7 @@ const Index = () => {
 
       {/* CATEGORIES */}
       <section className="py-16">
+        <Reveal>
         <div className="container">
           <div className="flex items-end justify-between mb-8">
             <h2 className="font-display text-3xl md:text-4xl font-extrabold">What are you craving?</h2>
@@ -155,10 +158,12 @@ const Index = () => {
             ))}
           </div>
         </div>
+        </Reveal>
       </section>
 
       {/* TRENDING */}
       <section className="pb-20">
+        <Reveal>
         <div className="container">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -177,10 +182,12 @@ const Index = () => {
             <p className="rounded-3xl border border-dashed p-10 text-center text-muted-foreground">Our chefs are preparing their menus. Check back soon.</p>
           )}
         </div>
+        </Reveal>
       </section>
 
       {/* MEAL PLANS */}
       <section className="pb-20">
+        <Reveal>
         <div className="container">
           <div className="relative overflow-hidden rounded-[2rem] bg-ink p-6 text-ink-foreground md:p-12">
             <div className="absolute -left-20 -bottom-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
@@ -207,10 +214,12 @@ const Index = () => {
             </div>
           </div>
         </div>
+        </Reveal>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="py-20 bg-secondary/60">
+        <Reveal>
         <div className="container">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-center mb-12">Dinner sorted in three taps</h2>
           <div className="grid md:grid-cols-3 gap-6">
@@ -228,10 +237,12 @@ const Index = () => {
             ))}
           </div>
         </div>
+        </Reveal>
       </section>
 
       {/* CHEFS */}
       <section className="py-20">
+        <Reveal>
         <div className="container">
           <div className="flex items-end justify-between mb-4">
             <div>
@@ -266,10 +277,12 @@ const Index = () => {
             </div>
           )}
         </div>
+        </Reveal>
       </section>
 
       {/* EVENTS + CHEF SIGNUP */}
       <section className="pb-20">
+        <Reveal>
         <div className="container grid lg:grid-cols-2 gap-6">
           <div className="rounded-[2rem] bg-ink text-ink-foreground p-10 md:p-12 relative overflow-hidden">
             <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-primary/40 blur-3xl" />
@@ -289,10 +302,12 @@ const Index = () => {
             </Button>
           </div>
         </div>
+        </Reveal>
       </section>
 
       {/* TRUST + REVIEWS */}
       <section className="py-20 bg-secondary/60">
+        <Reveal>
         <div className="container">
           <div className="grid md:grid-cols-3 gap-4 mb-14">
             {[
@@ -317,10 +332,12 @@ const Index = () => {
             ))}
           </div>
         </div>
+        </Reveal>
       </section>
 
       {/* FAQ */}
       <section className="py-16">
+        <Reveal>
         <div className="container max-w-3xl">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold mb-6">Questions, answered</h2>
           <Accordion type="single" collapsible>
@@ -333,10 +350,12 @@ const Index = () => {
           </Accordion>
           <p className="mt-4 text-sm text-muted-foreground">Still have a question? Email <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
         </div>
+        </Reveal>
       </section>
 
       {/* FINAL CTA */}
       <section className="py-20">
+        <Reveal>
         <div className="container text-center max-w-2xl">
           <h2 className="font-display text-4xl md:text-5xl font-extrabold mb-4">Hungry? Find your chef.</h2>
           <p className="text-muted-foreground text-lg mb-8">{promoText}.</p>
@@ -344,6 +363,7 @@ const Index = () => {
             <Link to="/menu">Start your order <ArrowRight className="ml-2 h-5 w-5" /></Link>
           </Button>
         </div>
+        </Reveal>
       </section>
     </Layout>
   );

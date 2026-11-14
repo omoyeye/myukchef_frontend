@@ -13,6 +13,8 @@ export interface Invoice {
     grossAmount: number;
     commissionPercent: number;
     commissionAmount: number;
+    commissionVat?: number;
+    tipAmount?: number;
     netAmount: number;
     status: 'awaiting_chef' | 'submitted' | 'processing' | 'paid' | 'held' | 'void';
     holdReason: string | null;

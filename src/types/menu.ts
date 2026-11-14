@@ -14,7 +14,9 @@ export interface MenuItem {
   isPopular?: boolean;
   isSoldOut?: boolean;
   modifiers?: Modifier[];
-  chef?: { id: number; displayName: string; avatar?: string | null } | null;
+  chef?: { id: number; displayName: string; avatar?: string | null; openNow?: boolean; paused?: boolean; nextOpen?: string | null } | null;
+  /** Hours of warning the chef needs for this dish. */
+  noticeHours?: number;
 }
 
 export interface Modifier {

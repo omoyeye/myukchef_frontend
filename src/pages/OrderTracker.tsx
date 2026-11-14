@@ -12,6 +12,8 @@ import { api } from '@/lib/api';
 import SEO from '@/components/common/SEO';
 import { OrderProgressPanel } from '@/components/orders/OrderProgressPanel';
 import { PaymentStatusBanner } from '@/components/orders/PaymentStatusBanner';
+import { OrderTiming } from '@/components/orders/OrderTiming';
+import { OrderChat } from '@/components/orders/OrderChat';
 
 const milesApart = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
     const toRad = (d: number) => (d * Math.PI) / 180;
@@ -98,6 +100,8 @@ const OrderTracker = () => {
                         </div>
                     </div>
 
+                    <OrderTiming order={order} token={trackingToken} />
+
                     <PaymentStatusBanner
                         orderId={order.id}
                         paymentStatus={order.paymentStatus ?? 'not_required'}
@@ -177,6 +181,8 @@ const OrderTracker = () => {
                         </div>
                     </Card>
 
+
+                    {!['awaiting_payment', 'cancelled'].includes(order.status) && <div className="mb-6"><OrderChat orderId={order.id} token={trackingToken} /></div>}
 
                     <OrderProgressPanel
                         orderId={order.id}

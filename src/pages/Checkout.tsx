@@ -19,6 +19,7 @@ import { Loader2, ArrowLeft, CheckCircle2, Lock, Ticket } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Layout } from '@/components/layout/Layout';
 import SEO from '@/components/common/SEO';
+import { WhenAndTip } from '@/components/checkout/WhenAndTip';
 import { useQuery } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -54,6 +55,9 @@ const Checkout = () => {
     const [discountCode, setDiscountCode] = useState('');
     const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
     const [isValidatingCode, setIsValidatingCode] = useState(false);
+    // When the food is wanted (null means as soon as possible), and an optional tip for the chefs.
+    const [when, setWhen] = useState<string | null>(null);
+    const [tip, setTip] = useState(0);
 
     const form = useForm<CheckoutFormValues>({
         resolver: zodResolver(checkoutSchema),
@@ -105,14 +109,14 @@ const Checkout = () => {
     const totalBeforeDiscount = subtotal + serviceFee + shownDeliveryFee;
 
     const calculateDiscountedTotal = () => {
-        if (!appliedDiscount) return totalBeforeDiscount;
+        if (!appliedDiscount) return totalBeforeDiscount + tip;
         let discountValue = 0;
         if (appliedDiscount.type === 'percentage') {
             discountValue = subtotal * (appliedDiscount.value / 100);
         } else {
             discountValue = Math.min(appliedDiscount.value, subtotal);
         }
-        return Math.max(0, totalBeforeDiscount - discountValue);
+        return Math.max(0, totalBeforeDiscount - discountValue) + tip;
     };
 
     // With Stripe switched on, the customer pays by card before the order reaches the chefs.
@@ -131,6 +135,8 @@ const Checkout = () => {
                 items,
                 deliveryMethod: data.deliveryMethod,
                 discountCode: appliedDiscount?.code,
+                scheduledFor: when,
+                tip,
                 deliveryAddress: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -397,12 +403,15 @@ const Checkout = () => {
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
-                                    <CardHeader className="bg-secondary/10">
-                                        <CardTitle className="text-xl">Payment</CardTitle>
-                                        <CardDescription>You'll pay when your order arrives or when you collect it. We'll confirm the details by email.</CardDescription>
-                                    </CardHeader>
-                                </Card>
+                                <WhenAndTip
+                                    itemIds={items.map((i) => i.menuItem.id)}
+                                    pickup={deliveryMethod === 'pickup'}
+                                    when={when}
+                                    onWhen={setWhen}
+                                    tip={tip}
+                                    onTip={setTip}
+                                    foodTotal={subtotal + serviceFee}
+                                />
                             </form>
                         </Form>
                     </div>
@@ -462,6 +471,12 @@ const Checkout = () => {
 
                                         <Separator className="my-6" />
 
+                                        {tip > 0 && (
+                                            <div className="flex justify-between pb-2 text-base">
+                                                <span className="text-muted-foreground font-medium">Tip for your chef</span>
+                                                <span className="font-bold">{formatPrice(tip)}</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between items-end pb-4">
                                             <span className="font-extrabold text-2xl tracking-tight">Total</span>
                                             <div className="text-right">

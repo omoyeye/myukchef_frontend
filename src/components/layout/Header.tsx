@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { ThemeToggle } from "./ThemeToggle";
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, User, Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,18 @@ export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { itemCount, toggleCart } = useCart();
+  // A little bounce on the basket whenever something is added.
+  const [bump, setBump] = useState(false);
+  const lastCount = useRef(itemCount);
+  useEffect(() => {
+    if (itemCount > lastCount.current) {
+      setBump(true);
+      const t = window.setTimeout(() => setBump(false), 600);
+      lastCount.current = itemCount;
+      return () => window.clearTimeout(t);
+    }
+    lastCount.current = itemCount;
+  }, [itemCount]);
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
@@ -104,11 +117,12 @@ export const Header = () => {
             </div>
           )}
 
+          <ThemeToggle className={overDarkHero ? "text-white hover:bg-white/10" : ""} />
           <Button
             variant="ghost"
             size="icon"
             aria-label="Open cart"
-            className={cn("relative", overDarkHero ? "text-white hover:bg-white/10" : "")}
+            className={cn("relative", overDarkHero ? "text-white hover:bg-white/10" : "", bump && "animate-cart-bump")}
             onClick={toggleCart}
           >
             <ShoppingBag className="h-5 w-5" />

@@ -156,6 +156,9 @@ export const Footer = () => {
               <Link to="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Cookie Policy
               </Link>
+              <Link to="/refer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Refer a friend
+              </Link>
               <button type="button" onClick={openCookieSettings} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Cookie settings
               </button>

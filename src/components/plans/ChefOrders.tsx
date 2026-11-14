@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { OrderChat } from "@/components/orders/OrderChat";
 import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Camera, Check, ChefHat, Loader2, MapPin, PackageCheck, Truck, UtensilsCrossed, Wallet } from "lucide-react";
@@ -36,6 +37,9 @@ interface ChefOrder {
     status: string;
     myStatus: string;
     createdAt: string;
+    /** When the customer wants it. */
+    scheduledFor: string | null;
+    tipAmount: number;
     area: string | null;
     method: "delivery" | "pickup";
     customerName: string | null;
@@ -86,7 +90,10 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                         <p className="font-bold">Order #{order.id}{order.customerName ? ` for ${order.customerName}` : ""}</p>
-                        <p className="text-sm text-muted-foreground">{format(new Date(order.createdAt), "d MMM, HH:mm")} · {pickup ? "Customer collects" : `${order.area ?? "Delivery"} area`}</p>
+                        {order.scheduledFor && order.myStatus !== "completed" && order.myStatus !== "cancelled" && (
+                            <p className="text-sm font-semibold text-primary">{pickup ? "Ready by" : "Deliver by"} {format(new Date(order.scheduledFor), "EEE d MMM, HH:mm")}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">Ordered {format(new Date(order.createdAt), "d MMM, HH:mm")} · {pickup ? "Customer collects" : `${order.area ?? "Delivery"} area`}</p>
                     </div>
                     <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", stage.className)}>{stage.label}</span>
                 </div>
@@ -127,10 +134,11 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
                     </div>
                 )}
                 {order.myStatus === "delivery" && !pickup && <CourierShare orderId={order.id} />}
+                {order.myStatus !== "cancelled" && <OrderChat orderId={order.id} compact />}
 
                 {order.myStatus === "completed" && (
                     <div className="space-y-1.5 rounded-xl bg-secondary/60 p-3 text-sm">
-                        <p className="flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" />{money(order.payoutAmount ?? 0)} for you: <span className="font-bold">{order.payoutStatus === "paid" ? "paid" : "waiting for our team to check and pay"}</span></p>
+                        <p className="flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" />{money(order.payoutAmount ?? 0)} for you{order.tipAmount > 0 ? ` (including a ${money(order.tipAmount)} tip)` : ""}: <span className="font-bold">{order.payoutStatus === "paid" ? "paid" : "invoice follows once the customer confirms"}</span></p>
                         <p className="flex items-center gap-2 text-muted-foreground">
                             <BadgeCheck className="h-4 w-4" />
                             {order.customerConfirmedAt ? "The customer confirmed they received it." : order.customerIssue ? "The customer reported a problem. Our team will be in touch." : "Waiting for the customer to confirm."}

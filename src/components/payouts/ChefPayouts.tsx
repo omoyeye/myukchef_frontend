@@ -103,7 +103,7 @@ export function ChefPayouts() {
                                     </div>
                                     <p className="text-sm text-muted-foreground">{invoice.description} · {format(new Date(invoice.createdAt), 'd MMM yyyy')}</p>
                                     <p className="text-sm">
-                                        {money(invoice.grossAmount)} sales − {money(invoice.commissionAmount)} commission ({invoice.commissionPercent}%) = <strong>{money(invoice.netAmount)}</strong>
+                                        {money(invoice.grossAmount)} sales − {money(invoice.commissionAmount)} commission ({invoice.commissionPercent}%){invoice.tipAmount ? ` + ${money(invoice.tipAmount)} tip` : ""} = <strong>{money(invoice.netAmount)}</strong>
                                     </p>
                                     {invoice.status === 'held' && invoice.holdReason && <p className="text-sm text-amber-700">On hold: {invoice.holdReason}</p>}
                                     {invoice.status === 'void' && invoice.holdReason && <p className="text-sm text-muted-foreground">{invoice.holdReason}</p>}
@@ -162,6 +162,7 @@ function SubmitInvoiceDialog({ invoice, legalName, onClose, onDone }: { invoice:
                             <Row label="For" value={invoice.description} />
                             <Row label="Your sales" value={money(invoice.grossAmount)} />
                             <Row label={`MYUKCHEF commission (${invoice.commissionPercent}%)`} value={`− ${money(invoice.commissionAmount)}`} />
+                            {invoice.tipAmount ? <Row label="Customer tip" value={`+ ${money(invoice.tipAmount)}`} /> : null}
                             <Row label="You receive" value={money(invoice.netAmount)} strong />
                         </dl>
                         <div className="flex items-start gap-3">

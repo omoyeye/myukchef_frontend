@@ -258,3 +258,20 @@ label {
     scroll-behavior: auto !important;
   }
 }
+
+/* A little bounce on the basket when something is added. */
+@keyframes cart-bump {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.25) rotate(-8deg); }
+  60% { transform: scale(0.95) rotate(4deg); }
+}
+.animate-cart-bump { animation: cart-bump 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Content loading in: a soft shimmer instead of a spinner. */
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.shimmer { position: relative; overflow: hidden; }
+.shimmer::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.6), transparent); animation: shimmer 1.4s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cart-bump, .shimmer::after { animation: none; }
+}

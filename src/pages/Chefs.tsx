@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CardGridSkeleton } from "@/components/common/Skeletons";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, CalendarDays, ChefHat, Loader2, MapPin, Search, ShieldCheck, Sparkles } from "lucide-react";
@@ -91,7 +92,7 @@ const Chefs = () => {
                 )}
 
                 {isLoading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    <CardGridSkeleton count={6} className="lg:grid-cols-3 xl:grid-cols-3" />
                 ) : chefs.length === 0 ? (
                     <p className="py-20 text-center text-muted-foreground">No chefs yet. Check back soon!</p>
                 ) : shown.length === 0 ? (

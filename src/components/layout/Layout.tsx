@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
@@ -15,7 +16,7 @@ export const Layout = ({ children, hideFooter = false, fullBleed = false }: Layo
   return (
     <div className="min-h-screen flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       <Header />
-      <main className={`flex-1 relative z-10 ${!fullBleed ? 'pt-24' : ''}`}>{children}</main>
+      <main className={`flex-1 relative z-10 ${!fullBleed ? 'pt-24' : ''}`}>{!fullBleed && <VerifyEmailBanner />}{children}</main>
       {!hideFooter && <Footer />}
       <MobileNav />
       <CartDrawer />

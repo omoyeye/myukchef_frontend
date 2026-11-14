@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { nextOpenLabel, thumb, thumbSet } from "@/lib/images";
 import { ChefHat, Plus, Star, Leaf, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,9 +44,11 @@ export const MenuCard = ({ item, className }: MenuCardProps) => {
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
-            src={item.image}
+            src={thumb(item.image, 480)}
+            srcSet={thumbSet(item.image, 480)}
             alt={item.name}
             loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
@@ -71,6 +74,12 @@ export const MenuCard = ({ item, className }: MenuCardProps) => {
             )}
           </div>
 
+          {/* When the chef cooks: paused, or opens later (orders can still be scheduled). */}
+          {!item.isSoldOut && item.chef && (item.chef.paused || item.chef.openNow === false) && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow">
+              {item.chef.paused ? "Not taking orders" : nextOpenLabel(item.chef.nextOpen)}
+            </div>
+          )}
           {item.isSoldOut && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
               <Badge variant="secondary" className="text-sm">
@@ -101,7 +110,7 @@ export const MenuCard = ({ item, className }: MenuCardProps) => {
               {item.chef && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-primary">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
-                    {item.chef.avatar ? <img src={item.chef.avatar} alt="" loading="lazy" className="h-full w-full object-cover" /> : <ChefHat className="h-3 w-3" />}
+                    {item.chef.avatar ? <img src={thumb(item.chef.avatar, 240)} alt="" loading="lazy" className="h-full w-full object-cover" /> : <ChefHat className="h-3 w-3" />}
                   </span>
                   <span className="truncate">By {item.chef.displayName}</span>
                 </p>

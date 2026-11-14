@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PayByCardButton } from "@/components/orders/PayByCardButton";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -133,6 +134,12 @@ const MyBookingDetail = () => {
                             </div>
                             <p className="font-display text-4xl font-extrabold text-primary">{money(booking.finalTotal)}</p>
                         </div>
+                        {booking.paymentStatus !== "submitted" && (
+                            <div className="mt-4">
+                                <PayByCardButton payPath={`/events/${booking.id}/pay-by-card`} statusPath={`/events/${booking.id}/payment-status`} amount={booking.finalTotal ?? 0} refreshKey={["my-booking", id]} />
+                                <p className="mt-2 text-xs text-muted-foreground">Or pay by bank transfer below.</p>
+                            </div>
+                        )}
                         {booking.paymentStatus === "submitted" ? (
                             <p className="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 p-4 text-amber-950"><Clock className="h-5 w-5 shrink-0" /><span><span className="font-bold">We're checking your payment.</span> We'll let you know as soon as it arrives, and tell your chefs.</span></p>
                         ) : booking.bankDetails ? (

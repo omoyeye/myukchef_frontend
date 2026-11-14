@@ -9,13 +9,17 @@ interface User {
     points: number;
     isAdmin?: boolean;
     role?: string;
+    /** Set once they've clicked the link in their confirmation email. */
+    emailVerifiedAt?: string | null;
 }
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     login: (email: string, password: string, portal?: Portal) => Promise<User>;
-    register: (name: string, email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string, referralCode?: string) => Promise<void>;
+    /** Loads the account again, for example after confirming the email address. */
+    refreshUser: () => Promise<void>;
     logout: () => void;
     isLoading: boolean;
     error: string | null;
@@ -71,11 +75,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const register = async (name: string, email: string, password: string) => {
+    const refreshUser = async () => {
+        if (!session.token) return;
+        const data = await api.get('/auth/me').catch(() => null);
+        if (data?.user) setUser({ ...data.user, isAdmin: data.user.role === 'admin' });
+    };
+
+    const register = async (name: string, email: string, password: string, referralCode?: string) => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await api.post('/auth/register', { name, email, password, acceptTerms: true });
+            const data = await api.post('/auth/register', { name, email, password, acceptTerms: true, referralCode });
             const userData = {
                 ...data.user,
                 isAdmin: data.user.role === 'admin'
@@ -96,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout, isLoading, error }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, refreshUser, logout, isLoading, error }}>
             {children}
         </AuthContext.Provider>
     );

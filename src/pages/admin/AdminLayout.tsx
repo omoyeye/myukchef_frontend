@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarDays, CalendarHeart, ChefHat, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, Settings, Star, Ticket, Users } from 'lucide-react';
+import { BarChart3, CalendarDays, CalendarHeart, ChefHat, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, Settings, Star, Ticket, Users } from 'lucide-react';
 import SEO from '@/components/common/SEO';
 import { PortalShell } from '@/components/layout/PortalShell';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ const SECTIONS = [
     { icon: Users, label: 'Customers', to: '/admin/customers' },
     { icon: CalendarDays, label: 'Meal Plans', to: '/admin/meal-plans' },
     { icon: ClipboardList, label: 'Orders', to: '/admin/orders' },
+    { icon: BarChart3, label: 'Reports', to: '/admin/reports' },
     { icon: CalendarHeart, label: 'Events', to: '/admin/events' },
     { icon: MenuIcon, label: 'Menu', to: '/admin/menu' },
     { icon: Star, label: 'Reviews', to: '/admin/reviews' },

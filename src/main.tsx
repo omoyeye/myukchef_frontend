@@ -1,3 +1,4 @@
+import { startErrorReporting } from "./lib/errorReporting";
 import { createRoot } from "react-dom/client";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
@@ -8,4 +9,5 @@ import "@fontsource/bricolage-grotesque/800.css";
 import App from "./App.tsx";
 import "./index.css";
 
+startErrorReporting();
 createRoot(document.getElementById("root")!).render(<App />);

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ListSkeleton } from "@/components/common/Skeletons";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CalendarDays, ChefHat, Loader2, Plus } from "lucide-react";
@@ -80,7 +81,7 @@ const MyPlans = () => {
                 </div>
 
                 {isLoading || authLoading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    <ListSkeleton />
                 ) : plans.length === 0 ? (
                     <div className="rounded-[2rem] bg-ink p-8 text-center text-ink-foreground md:p-14">
                         <CalendarDays className="mx-auto mb-4 h-12 w-12 text-primary" />

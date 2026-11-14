@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Save } from 'lucide-react';
 import { DeliveryTiersEditor } from '@/components/admin/DeliveryTiersEditor';
+import { BusinessRules } from '@/components/admin/BusinessRules';
 
 const AdminSettings = () => {
     const { user } = useAuth();
@@ -89,7 +90,7 @@ const AdminSettings = () => {
                 <p className="text-muted-foreground">Manage your store configurations and preferences.</p>
             </div>
 
-            <Tabs defaultValue="general" className="space-y-4">
+            <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") ?? "general"} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="operations">Operations</TabsTrigger>
@@ -99,6 +100,7 @@ const AdminSettings = () => {
                     <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
                     <TabsTrigger value="notifications">Notifications</TabsTrigger>
                     <TabsTrigger value="legal">Legal & Info</TabsTrigger>
+                    <TabsTrigger value="rules">Business rules</TabsTrigger>
                 </TabsList>
 
                 {/* General Settings */}
@@ -511,6 +513,8 @@ const AdminSettings = () => {
                 </TabsContent>
 
                 {/* Legal Settings */}
+                <TabsContent value="rules"><BusinessRules /></TabsContent>
+
                 <TabsContent value="legal" className="space-y-6">
                     <Card>
                         <CardHeader>

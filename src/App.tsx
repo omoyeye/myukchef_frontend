@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -32,6 +33,9 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const IntegrationSettings = lazy(() => import("./pages/admin/IntegrationSettings"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const ReferFriend = lazy(() => import("./pages/ReferFriend"));
 const SearchOrder = lazy(() => import("./pages/SearchOrder"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
@@ -67,6 +71,7 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60
 const PublicFab = () => (/^\/(admin|chef)(\/|$)/.test(useLocation().pathname) ? null : <MobileFab />);
 
 const App = () => (
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -91,6 +96,8 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/refer" element={<ReferFriend />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/allergens" element={<AllergenInfo />} />
               <Route path="/support" element={<Support />} />
@@ -141,6 +148,7 @@ const App = () => (
                 <Route path="support" element={<SupportInbox />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="payments-email" element={<IntegrationSettings />} />
+                <Route path="reports" element={<Reports />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -155,6 +163,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

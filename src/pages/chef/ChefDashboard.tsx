@@ -9,6 +9,8 @@ import { PortalItem, PortalShell } from "@/components/layout/PortalShell";
 import { AllergenPicker } from "@/components/common/AllergenPicker";
 import { ChefCompliance } from "@/components/plans/ChefCompliance";
 import { ChefPayouts } from "@/components/payouts/ChefPayouts";
+import { CookingTimes } from "@/components/plans/CookingTimes";
+import { ChefEarnings } from "@/components/payouts/ChefEarnings";
 import { ChefCredentials } from "@/components/credentials/ChefCredentials";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { allergenSummary } from "@/lib/allergens";
@@ -31,6 +33,9 @@ import { Switch } from "@/components/ui/switch";
 interface Chef {
     id: number;
     displayName: string;
+    openingHours?: Record<string, { open: boolean; from: string; to: string }> | null;
+    ordersPaused?: boolean;
+    noticeHours?: number;
     bio: string | null;
     specialty: string | null;
     avatar: string | null;
@@ -276,7 +281,7 @@ const ChefDashboard = () => {
 
                     <TabsContent value="plans"><ChefPlansPanel /></TabsContent>
                     <TabsContent value="reviews"><ChefReviewsPanel /></TabsContent>
-                    <TabsContent value="payouts"><ChefPayouts /></TabsContent>
+                    <TabsContent value="payouts" className="space-y-10"><ChefEarnings /><ChefPayouts /></TabsContent>
                     <TabsContent value="compliance"><div className="space-y-10"><ChefCredentials /><ChefCompliance /></div></TabsContent>
 
                     {/* MY PRODUCTS */}
@@ -334,6 +339,11 @@ const ChefDashboard = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2"><Label>Dish Name *</Label><Input value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} /></div>
                                     <div className="space-y-2"><Label>Price (£) *</Label><Input type="number" inputMode="decimal" step="0.01" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} /></div>
+                                    <div className="space-y-2 sm:col-span-2">
+                                        <Label htmlFor="dish-notice">Extra notice for this dish (hours, optional)</Label>
+                                        <Input id="dish-notice" type="number" min="0" max="168" className="sm:max-w-xs" placeholder={`Your usual ${chef.noticeHours ?? 1} hour(s)`} value={(newProduct as { noticeHours?: string }).noticeHours ?? ""} onChange={(e) => setNewProduct({ ...newProduct, noticeHours: e.target.value } as typeof newProduct)} />
+                                        <p className="text-xs text-muted-foreground">For dishes that take longer, like slow-cooked stews or celebration cakes.</p>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Category</Label>
@@ -363,7 +373,8 @@ const ChefDashboard = () => {
                     </TabsContent>
 
                     {/* PROFILE */}
-                    <TabsContent value="profile">
+                    <TabsContent value="profile" className="space-y-6">
+                        <CookingTimes chef={chef} />
                         <Card>
                             <CardHeader><CardTitle>Profile Settings</CardTitle></CardHeader>
                             <CardContent className="space-y-4">

@@ -1,11 +1,10 @@
 import { Component, ErrorInfo, ReactNode, useEffect, useState } from "react";
-import { Loader2, WifiOff } from "lucide-react";
+import { PageSkeleton } from "@/components/common/Skeletons";
+import { reportError } from "@/lib/errorReporting";
+import { WifiOff } from "lucide-react";
 
-export const PageLoader = () => (
-    <div role="status" aria-label="Loading" className="flex min-h-[60dvh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-);
+/** Shown while a page loads: grey shapes in the page's layout rather than a spinner. */
+export const PageLoader = () => <PageSkeleton />;
 
 export const OfflineBanner = () => {
     const [offline, setOffline] = useState(!navigator.onLine);
@@ -36,6 +35,7 @@ export class AppErrorBoundary extends Component<{ children: ReactNode }, { faile
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error("App error:", error, info.componentStack);
+        reportError(error);
     }
 
     render() {

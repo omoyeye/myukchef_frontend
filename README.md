@@ -24,6 +24,8 @@ The site runs on http://localhost:8080. In development, `/api` and `/uploads` ar
 | `npm run build` | Build to `dist/` |
 | `npm run lint` / `npm test` / `npm run typecheck` | Lint, test and type-check |
 
+Every push to GitHub type-checks, tests and builds the site (see `.github/workflows/ci.yml`).
+
 ## Hosting
 
 The site and the API are meant to share one domain: build the site and let the API serve `dist/`, or have your web host pass `/api` and `/uploads` through to the API. Uploaded photos and videos are linked as `/uploads/...`, so they only load when that path reaches the API.
