@@ -22,6 +22,7 @@ import { api } from '@/lib/api';
 import { categories } from '@/data/categories';
 import { MenuItem } from '@/types/menu';
 import SEO from '@/components/common/SEO';
+import { BannerAds } from "@/components/banners/BannerAds";
 
 const DIETARY_FILTERS = [
     { id: 'isVegetarian', label: 'Vegetarian' },
@@ -149,6 +150,8 @@ const Menu = () => {
                             Failed to load menu. Please try again later.
                         </div>
                     )}
+
+                    <BannerAds placement="menu" className="mb-6" />
 
                     {/* Header & Search */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-8">

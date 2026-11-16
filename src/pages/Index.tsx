@@ -18,7 +18,9 @@ import { SearchBar } from '@/components/home/SearchBar';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import SEO from '@/components/common/SEO';
+import { ReorderSuggestions } from '@/components/plans/PlanHistory';
 import heroChef from '@/assets/hero-chef.jpg';
+import { BannerAds } from '@/components/banners/BannerAds';
 
 // React 18 only passes this browser setting through in lowercase.
 const HERO_IMAGE_PRIORITY = { fetchpriority: 'high' };
@@ -27,7 +29,7 @@ const FAQS = [
   { q: 'How does MYUKCHEF work?', a: 'Browse dishes from independent local chefs, place your order, and follow its progress from the kitchen to your door. You can also book a chef or catering for an event.' },
   { q: 'Can I find a chef near me?', a: 'Yes. Share your location or enter a postcode and we will show the chefs who serve your area, nearest first.' },
   { q: 'Can I book chefs for a wedding or party?', a: 'Yes. Choose dishes from as many chefs as you like and each one sends you a quote. You compare them in one booking, confirm the ones you want and pay MYUKCHEF once. We pay your chefs, and they come to serve on the day if they can.' },
-  { q: 'Can I plan my meals for weeks ahead?', a: 'Yes. Choose a chef and plan 1, 3 or 6 months of the dishes you love, delivered weekly. You pay per delivery, can skip any week, and your plan never renews by itself.' },
+  { q: 'Can I plan my meals for weeks ahead?', a: 'Yes. Choose a chef and plan anything from 1 week to 6 months of the dishes you love, delivered weekly. You pay per delivery, can skip any week, and your plan never renews by itself.' },
   { q: 'How do you handle dietary needs and allergens?', a: 'Each dish lists its dietary details and allergens, and our recommendation tool filters by what you need. If you have a severe allergy, please confirm with us before ordering.' },
   { q: 'How do I become a chef on MYUKCHEF?', a: 'Apply through our chef sign-up page. Our team reviews every application before a chef or their dishes go live.' },
 ];
@@ -120,7 +122,7 @@ const Index = () => {
               <HeroSlideshow first={heroChef} firstAlt="A chef plating a freshly cooked meal" dishes={popularItems.filter((d) => d.image)} imgProps={{ width: 1280, height: 1280, ...HERO_IMAGE_PRIORITY }} />
             </div>
             <Link to="/meal-plans" className="hero-chip hero-chip-late absolute right-3 top-4 sm:-right-4 sm:top-10 flex min-h-11 items-center gap-2 rounded-full bg-ink/90 px-4 text-sm font-bold text-ink-foreground shadow-xl ring-1 ring-ink-foreground/15 backdrop-blur">
-              <CalendarDays className="h-4 w-4 text-primary" /> 1, 3 or 6 month plans
+              <CalendarDays className="h-4 w-4 text-primary" /> Plans from 1 week to 6 months
             </Link>
             <div className="hero-chip absolute left-3 bottom-4 sm:-left-6 sm:bottom-10 bg-card text-card-foreground rounded-2xl p-4 shadow-xl flex items-center gap-3 max-w-[16rem]">
               <div className="h-11 w-11 rounded-full bg-primary/15 flex items-center justify-center"><BadgeCheck className="h-6 w-6 text-primary" /></div>
@@ -139,6 +141,12 @@ const Index = () => {
           <Sparkles className="h-4 w-4 shrink-0" /> {promoText}
         </div>
       </div>
+
+      {/* BANNER ADVERTS (from Super Admin, Banners) */}
+      <div className="container [&:has(aside)]:pt-8"><BannerAds placement="home" /></div>
+
+      {/* ORDER A PLAN AGAIN (signed-in customers only) */}
+      <div className="container [&:has(section)]:pt-10"><ReorderSuggestions /></div>
 
       {/* CATEGORIES */}
       <section className="py-16">

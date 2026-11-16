@@ -390,13 +390,13 @@ const AdminSettings = () => {
                     <Card>
                         <CardHeader>
                             <CardTitle>Meal Plans</CardTitle>
-                            <CardDescription>Savings and rules for 1, 3 and 6 month plans. New plans use these values. Existing plans keep what they agreed.</CardDescription>
+                            <CardDescription>Plans can be any length from 1 week to 6 months. Savings apply from 4 weeks, 13 weeks (3 months) and 26 weeks (6 months); plans under 4 weeks pay the standard price. New plans use these values. Existing plans keep what they agreed.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-3">
                             {[
-                                ['discount1', '1 month saving (%)', 0],
-                                ['discount3', '3 month saving (%)', 5],
-                                ['discount6', '6 month saving (%)', 10],
+                                ['discount1', 'Saving from 4 weeks (%)', 0],
+                                ['discount3', 'Saving from 3 months / 13 weeks (%)', 5],
+                                ['discount6', 'Saving for 6 months / 26 weeks (%)', 10],
                                 ['cutoffHours', 'Change cut-off (hours before delivery)', 48],
                                 ['leadDays', 'Earliest start (days from today)', 3],
                                 ['deliveryFee', 'Delivery fee per week (£)', deliveryConfig.fee ?? 3.99],

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { AlertTriangle, CalendarDays, Check, ChefHat, ClipboardList, Inbox, MapPin, MessageCircle, Truck, Users, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, ChefHat, ClipboardList, History, Inbox, MapPin, MessageCircle, RefreshCw, Truck, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,7 +37,7 @@ const PlanDialog = ({ planId, onClose }: { planId: number | null; onClose: () =>
                 {plan ? (
                     <div className="min-w-0 space-y-4">
                         <DialogHeader>
-                            <DialogTitle>{plan.customerName}'s {planName(plan.durationMonths).toLowerCase()}</DialogTitle>
+                            <DialogTitle>{plan.customerName}'s {planName(plan).toLowerCase()}</DialogTitle>
                             <DialogDescription>{plan.mealsPerWeek} meals for {plan.servings}, every {planDate(plan.startDate, "EEEE")} until {planDate(plan.endDate, "d MMM yyyy")}</DialogDescription>
                         </DialogHeader>
                         <NeedsLine plan={plan} />
@@ -102,7 +102,10 @@ export const ChefPlansPanel = () => {
 
     const requests = plans.filter((p) => p.status === "requested");
     const running = plans.filter((p) => ["active", "paused"].includes(p.status));
-    const finished = plans.filter((p) => !["requested", "active", "paused"].includes(p.status));
+    const { data: history } = useQuery<{ plans: (PlanSummary & { customerName: string; mealsDelivered: number; paidTotal: number; renewed: boolean; favouriteDishes: { name: string }[]; lastDelivery: string | null })[]; totals: { plans: number; meals: number; paid: number; returnRate: number } }>({
+        queryKey: ["chef-plan-history"],
+        queryFn: () => api.get("/meal-plans/chef/history"),
+    });
 
     // Shopping and prep list: the same dish across customers, added together per day.
     const days = useMemo(() => {
@@ -129,7 +132,7 @@ export const ChefPlansPanel = () => {
                             <li key={plan.id} className="space-y-3 rounded-3xl border-2 border-primary/30 bg-card p-5">
                                 <div>
                                     <p className="font-display text-lg font-bold">{plan.customerName}</p>
-                                    <p className="text-sm text-muted-foreground">{planName(plan.durationMonths)} · {plan.mealsPerWeek} meals for {plan.servings}</p>
+                                    <p className="text-sm text-muted-foreground">{planName(plan)} · {plan.mealsPerWeek} meals for {plan.servings}</p>
                                 </div>
                                 <ul className="space-y-1 text-sm">
                                     <li className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" />Every {planDate(plan.startDate, "EEEE")} from {planDate(plan.startDate, "d MMM")}, {WINDOWS.find((w) => w.id === plan.deliveryWindow)?.label.toLowerCase()}</li>
@@ -200,18 +203,18 @@ export const ChefPlansPanel = () => {
 
             <section aria-labelledby="running-heading">
                 <h2 id="running-heading" className="mb-3 font-display text-xl font-bold">Your plans</h2>
-                {running.length + finished.length === 0 ? (
+                {running.length === 0 ? (
                     <p className="rounded-3xl border border-dashed p-6 text-center text-sm text-muted-foreground">Plans you accept will appear here.</p>
                 ) : (
                     <ul className="grid gap-3 md:grid-cols-2">
-                        {[...running, ...finished].map((plan) => (
+                        {running.map((plan) => (
                             <li key={plan.id}>
                                 <button type="button" onClick={() => setOpenPlan(plan.id)} className="w-full rounded-3xl border bg-card p-4 text-left transition-colors hover:border-primary">
                                     <span className="flex flex-wrap items-center justify-between gap-2">
                                         <span className="font-bold">{plan.customerName}</span>
                                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", PLAN_STATUS[plan.status]?.className)}>{PLAN_STATUS[plan.status]?.label}</span>
                                     </span>
-                                    <span className="block text-sm text-muted-foreground">{planName(plan.durationMonths)} · {plan.weeksDelivered} of {plan.weeksTotal} delivered</span>
+                                    <span className="block text-sm text-muted-foreground">{planName(plan)} · {plan.weeksDelivered} of {plan.weeksTotal} delivered</span>
                                     {plan.nextDelivery && ["active", "paused"].includes(plan.status) && <span className="block text-sm">Next: {planDate(plan.nextDelivery.deliveryDate)}</span>}
                                 </button>
                             </li>
@@ -219,6 +222,35 @@ export const ChefPlansPanel = () => {
                     </ul>
                 )}
             </section>
+
+            {history && history.plans.length > 0 && (
+                <section aria-labelledby="history-heading">
+                    <h2 id="history-heading" className="mb-1 flex items-center gap-2 font-display text-xl font-bold"><History className="h-5 w-5 text-primary" />Plan history</h2>
+                    <p className="mb-3 text-sm text-muted-foreground">
+                        {history.totals.meals} meals cooked across {history.totals.plans} plan{history.totals.plans === 1 ? "" : "s"} · {money(history.totals.paid)} paid by customers · {history.totals.returnRate}% came back for another plan
+                    </p>
+                    <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
+                        {history.plans.map((plan) => (
+                            <li key={plan.id}>
+                                <button type="button" onClick={() => setOpenPlan(plan.id)} className="flex w-full flex-col gap-1 p-4 text-left hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="min-w-0">
+                                        <span className="flex flex-wrap items-center gap-2 font-semibold">
+                                            {plan.customerName} · {planName(plan)}
+                                            <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", PLAN_STATUS[plan.status]?.className)}>{PLAN_STATUS[plan.status]?.label}</span>
+                                            {plan.renewed && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary"><RefreshCw className="h-3 w-3" />Came back</span>}
+                                        </span>
+                                        <span className="block text-sm text-muted-foreground">
+                                            {planDate(plan.startDate, "d MMM yyyy")} to {planDate(plan.lastDelivery ?? plan.endDate, "d MMM yyyy")} · {plan.weeksDelivered} of {plan.weeksTotal} delivered · {plan.mealsDelivered} meals
+                                        </span>
+                                        {plan.favouriteDishes.length > 0 && <span className="block truncate text-xs text-muted-foreground">Most ordered: {plan.favouriteDishes.map((d) => d.name).join(", ")}</span>}
+                                    </span>
+                                    <span className="shrink-0 text-sm font-semibold">{money(plan.paidTotal)}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
             <Dialog open={!!responding} onOpenChange={(open) => !open && setResponding(null)}>
                 <DialogContent>

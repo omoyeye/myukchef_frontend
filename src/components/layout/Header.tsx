@@ -20,6 +20,7 @@ const navLinks = [
   { label: 'Meal Plans', href: '/meal-plans' },
   { label: 'For You', href: '/recommend' },
   { label: 'Chefs', href: '/chefs' },
+  { label: 'Videos', href: '/videos' },
   { label: 'Events', href: '/events' },
   { label: 'Track Order', href: '/track-order' },
   { label: 'Rewards', href: '/profile?tab=rewards' },

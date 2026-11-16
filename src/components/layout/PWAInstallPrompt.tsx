@@ -1,116 +1,70 @@
-import { useState, useEffect } from 'react';
-import { X, Download, Star, Zap, Bell } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Bell, Download, MapPin, Share, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { useInstallApp } from '@/lib/pwa';
 
+const DISMISS_KEY = 'pwa-prompt-dismissed-at';
+const DISMISS_DAYS = 14;
+const recentlyDismissed = () => {
+    try { return Date.now() - Number(localStorage.getItem(DISMISS_KEY) || 0) < DISMISS_DAYS * 86400_000; } catch { return true; }
+};
+
+/**
+ * A friendly "install the app" card, a few seconds into a visit. Chrome, Edge and Android get an
+ * install button; iPhones get the Share, then "Add to Home Screen" hint. Hidden for 14 days once closed,
+ * never shown inside the installed app, on the Get the app page, or in the admin and chef portals.
+ */
 export const PWAInstallPrompt = () => {
-    const [installPrompt, setInstallPrompt] = useState<any>(null);
-    const [isVisible, setIsVisible] = useState(false);
-    const [isDismissed, setIsDismissed] = useState(false);
+    const { installed, canInstall, install, iosSafari } = useInstallApp();
+    const { pathname } = useLocation();
+    const [visible, setVisible] = useState(false);
+    const eligible = !installed && (canInstall || iosSafari) && !/^\/(app|admin|chef)(\/|$)/.test(pathname);
 
     useEffect(() => {
-        const handleBeforeInstallPrompt = (e: any) => {
-            // Prevent the default browser prompt
-            e.preventDefault();
-            // Store the event so it can be triggered later
-            setInstallPrompt(e);
+        if (!eligible || recentlyDismissed()) return;
+        const t = setTimeout(() => setVisible(true), 6000);
+        return () => clearTimeout(t);
+    }, [eligible]);
 
-            // Check if user has already dismissed it this session or globally
-            const dismissed = localStorage.getItem('pwa-prompt-dismissed');
-            if (!dismissed) {
-                // Show our custom prompt after a short delay
-                setTimeout(() => setIsVisible(true), 3000);
-            }
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-        // Also check if already installed
-        window.addEventListener('appinstalled', () => {
-            setInstallPrompt(null);
-            setIsVisible(false);
-        });
-
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    }, []);
-
-    const handleInstallClick = async () => {
-        if (!installPrompt) return;
-
-        // Show the browser's install prompt
-        installPrompt.prompt();
-
-        // Wait for the user to respond to the prompt
-        const { outcome } = await installPrompt.userChoice;
-
-        if (outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-            setIsVisible(false);
-        } else {
-            console.log('User dismissed the install prompt');
-        }
-
-        setInstallPrompt(null);
+    const close = () => {
+        setVisible(false);
+        try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch { /* private mode */ }
     };
-
-    const handleDismiss = () => {
-        setIsVisible(false);
-        setIsDismissed(true);
-        // Remember dismissal for 7 days
-        localStorage.setItem('pwa-prompt-dismissed', 'true');
-    };
-
-    if (!isVisible || isDismissed) return null;
+    if (!visible || !eligible) return null;
 
     return (
-        <div className="fixed bottom-20 left-4 right-4 z-[100] md:bottom-6 md:right-6 md:left-auto md:max-w-md animate-in slide-in-from-bottom-10 duration-500">
-            <Card className="bg-gradient-to-br from-orange-600 to-red-700 text-white border-none shadow-2xl overflow-hidden relative group">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 text-white/70 hover:text-white hover:bg-white/10 h-8 w-8"
-                    onClick={handleDismiss}
-                >
+        <div role="dialog" aria-labelledby="install-title" className="fixed bottom-20 left-4 right-4 z-[100] animate-in slide-in-from-bottom-10 duration-500 md:bottom-6 md:left-auto md:right-6 md:max-w-md">
+            <div className="relative overflow-hidden rounded-3xl bg-ink text-ink-foreground shadow-2xl">
+                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/40 blur-2xl" />
+                <button type="button" onClick={close} aria-label="Not now" className="absolute right-3 top-3 z-10 rounded-full p-1.5 text-ink-foreground/70 hover:bg-ink-foreground/10 hover:text-ink-foreground">
                     <X className="h-4 w-4" />
-                </Button>
-
-                <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="hidden sm:flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-inner shrink-0 rotate-3 group-hover:rotate-0 transition-transform">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </button>
+                <div className="relative flex gap-4 p-5">
+                    <img src="/app/screen-order.webp" alt="" className="hidden h-28 w-16 shrink-0 rounded-xl object-cover sm:block" />
+                    <div className="min-w-0 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <img src="/pwa-192x192.png" alt="" className="h-9 w-9 rounded-xl" />
+                            <h3 id="install-title" className="font-display text-lg font-extrabold leading-tight">Get the MYUKCHEF app</h3>
                         </div>
-
-                        <div className="space-y-3">
-                            <div>
-                                <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
-                                    Get MYUKCHEF Faster! <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400 animate-pulse" />
-                                </h3>
-                                <p className="text-sm text-orange-50 font-medium">
-                                    Install our app for a smoother, faster ordering experience and exclusive home-screen deals.
-                                </p>
+                        <ul className="space-y-1 text-sm text-ink-foreground/80">
+                            <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" />Order in two taps from your home screen</li>
+                            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Track deliveries live</li>
+                            <li className="flex items-center gap-2"><Bell className="h-4 w-4 text-primary" />Know the moment dinner's on its way</li>
+                        </ul>
+                        {canInstall ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button className="h-11 rounded-full font-bold" onClick={async () => { if (await install()) setVisible(false); }}><Download className="mr-2 h-4 w-4" />Install, it's free</Button>
+                                <Link to="/app" onClick={() => setVisible(false)} className="text-sm font-semibold text-ink-foreground/80 underline-offset-4 hover:underline">Learn more</Link>
                             </div>
-
-                            <div className="flex flex-wrap gap-4 text-[10px] uppercase font-bold tracking-widest text-orange-200">
-                                <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-orange-200" /> Premium Access</span>
-                                <span className="flex items-center gap-1"><Bell className="h-3 w-3 fill-orange-200" /> Live Track Orders</span>
-                            </div>
-
-                            <Button
-                                onClick={handleInstallClick}
-                                className="w-full bg-white text-orange-700 hover:bg-orange-50 font-bold py-6 text-base shadow-lg hover:shadow-xl transition-all"
-                            >
-                                <Download className="mr-2 h-5 w-5" />
-                                Install MYUKCHEF
-                            </Button>
-                        </div>
+                        ) : (
+                            <p className="rounded-2xl bg-ink-foreground/10 p-3 text-sm">
+                                Tap <Share className="mx-0.5 inline h-4 w-4" aria-label="Share" /> below, then <strong>Add to Home Screen</strong>. <Link to="/app" onClick={() => setVisible(false)} className="font-semibold underline">Show me</Link>
+                            </p>
+                        )}
                     </div>
-                </CardContent>
-
-                {/* Decorative elements */}
-                <div className="absolute -bottom-6 -right-6 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
-                <div className="absolute -top-6 -left-6 h-24 w-24 bg-red-400/20 rounded-full blur-2xl" />
-            </Card>
+                </div>
+            </div>
         </div>
     );
 };

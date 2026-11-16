@@ -41,6 +41,13 @@ export default defineConfig(({ mode }) => {
         theme_color: '#f8620c',
         background_color: '#ffffff',
         categories: ['food', 'lifestyle', 'shopping'],
+        // Shown in the install window on Android and desktop Chrome/Edge.
+        screenshots: [
+          { src: '/app/screen-order.webp', sizes: '1080x1920', type: 'image/webp', form_factor: 'narrow', label: 'Order home-cooked food from local chefs' },
+          { src: '/app/screen-track.webp', sizes: '1080x1920', type: 'image/webp', form_factor: 'narrow', label: 'Track your delivery live' },
+          { src: '/app/screen-plans.webp', sizes: '1080x1920', type: 'image/webp', form_factor: 'narrow', label: 'Meal plans from 1 week to 6 months' },
+          { src: '/app/screen-wide.webp', sizes: '1920x1080', type: 'image/webp', form_factor: 'wide', label: 'MYUKCHEF on your computer' },
+        ],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -51,6 +58,7 @@ export default defineConfig(({ mode }) => {
           { name: 'Book a chef', url: '/events?source=shortcut', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
           { name: 'Find my meal', url: '/recommend?source=shortcut', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
           { name: 'Track an order', url: '/track-order?source=shortcut', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'My meal plans', url: '/my-plans?source=shortcut', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
         ],
       },
       workbox: {

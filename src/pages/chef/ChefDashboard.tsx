@@ -12,6 +12,8 @@ import { ChefPayouts } from "@/components/payouts/ChefPayouts";
 import { CookingTimes } from "@/components/plans/CookingTimes";
 import { ChefEarnings } from "@/components/payouts/ChefEarnings";
 import { ChefCredentials } from "@/components/credentials/ChefCredentials";
+import { ChefVideos } from "@/components/social/ChefVideos";
+import { WeeklyReport } from "@/components/reports/WeeklyReport";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { allergenSummary } from "@/lib/allergens";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +29,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import SEO from "@/components/common/SEO";
-import { ShieldCheck, CalendarDays, CalendarHeart, ChefHat, ExternalLink, LayoutDashboard, Loader2, Plus, ShoppingBag, Star, Trash2, UserRound, Wallet, Upload, UtensilsCrossed, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Clapperboard, ShieldCheck, CalendarDays, CalendarHeart, ChefHat, ExternalLink, LayoutDashboard, Loader2, Plus, ShoppingBag, Star, Trash2, UserRound, Wallet, Upload, UtensilsCrossed, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Chef {
@@ -213,6 +215,7 @@ const ChefDashboard = () => {
         section(UtensilsCrossed, `My dishes (${products.length})`, "products"),
         ...(isApproved ? [section(Plus, "Add a dish", "add")] : []),
         section(Star, "Reviews", "reviews"),
+        section(Clapperboard, "Videos", "videos"),
         section(Wallet, "Payouts", "payouts"),
         section(ShieldCheck, "Safety and certificates", "compliance"),
         section(UserRound, "My profile", "profile"),
@@ -275,7 +278,8 @@ const ChefDashboard = () => {
                 )}
 
                 <Tabs value={tab}>
-                    <TabsContent value="overview"><ChefOverview enabled={isApproved} /></TabsContent>
+                    <TabsContent value="overview" className="space-y-10"><ChefOverview enabled={isApproved} />{isApproved && <WeeklyReport who="chef" />}</TabsContent>
+                    <TabsContent value="videos"><ChefVideos /></TabsContent>
                     <TabsContent value="orders"><ChefOrders enabled /></TabsContent>
                     <TabsContent value="bookings"><ChefQuotes /></TabsContent>
 

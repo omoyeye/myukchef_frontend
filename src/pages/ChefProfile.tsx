@@ -20,6 +20,7 @@ import { api } from "@/lib/api";
 import { shareLink } from "@/lib/share";
 import { BRAND_NAME, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { FollowButton, PostCard, type Post } from "@/components/social/social";
 import { MenuItem } from "@/types/menu";
 
 const ChefProfile = () => {
@@ -122,7 +123,8 @@ const ChefProfile = () => {
                             </div>
                             <BestReview chefId={chef.id} firstName={firstName} />
                         </div>
-                        <div className="flex gap-2 sm:self-start">
+                        <div className="flex flex-wrap gap-2 sm:self-start">
+                            <FollowButton chefId={chef.id} chefName={chef.displayName} size="default" className="h-11" />
                             <Button
                                 variant="outline"
                                 size="icon"
@@ -168,7 +170,7 @@ const ChefProfile = () => {
                             <CalendarDays className="h-9 w-9 shrink-0" />
                             <span className="min-w-0">
                                 <span className="block font-display text-lg font-extrabold">Plan your meals with {firstName}</span>
-                                <span className="block text-sm text-primary-foreground/85">1, 3 or 6 months of food you choose</span>
+                                <span className="block text-sm text-primary-foreground/85">1 week to 6 months of food you choose</span>
                             </span>
                         </Link>
                     )}
@@ -194,6 +196,8 @@ const ChefProfile = () => {
                         </div>
                     </section>
                 )}
+
+                <ChefVideosSection chefId={chef.id} firstName={firstName} />
 
                 <VerifiedCredentials credentials={chef.credentials ?? []} firstName={firstName} />
                 <ChefGallery dishes={dishes} firstName={firstName} />
@@ -239,3 +243,24 @@ const ChefProfile = () => {
 };
 
 export default ChefProfile;
+
+/** The chef's latest videos (one a week, from YouTube). Hidden when they haven't shared any. */
+function ChefVideosSection({ chefId, firstName }: { chefId: number; firstName: string }) {
+    const { data } = useQuery<{ posts: Post[] }>({ queryKey: ["posts", "chef", chefId], queryFn: () => api.get(`/posts?chefId=${chefId}`) });
+    const posts = data?.posts.slice(0, 4) ?? [];
+    if (!posts.length) return null;
+    return (
+        <section aria-labelledby="videos-heading" className="mt-8">
+            <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                    <h2 id="videos-heading" className="font-display text-2xl font-extrabold md:text-3xl">What {firstName}'s cooking</h2>
+                    <p className="text-muted-foreground">A short video every week. Follow to hear when there's a new one.</p>
+                </div>
+                <Link to="/videos" className="shrink-0 text-sm font-semibold text-primary hover:underline">All chef videos</Link>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+                {posts.map((p) => <PostCard key={p.id} post={p} showChef={false} />)}
+            </div>
+        </section>
+    );
+}

@@ -66,6 +66,11 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/app" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Get the App
+                </Link>
+              </li>
+              <li>
                 <Link to="/events" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Book an Event
                 </Link>

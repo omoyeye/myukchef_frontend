@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CalendarDays, ChefHat, Loader2, Plus } from "lucide-react";
 import SEO from "@/components/common/SEO";
 import { CustomerPortal } from "@/components/layout/CustomerPortal";
+import { CustomerPlanHistory, ReorderSuggestions } from "@/components/plans/PlanHistory";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,7 +26,7 @@ const PlanCard = ({ plan }: { plan: PlanSummary }) => {
                 </span>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-display text-lg font-bold">{planName(plan.durationMonths)}</p>
+                        <p className="font-display text-lg font-bold">{planName(plan)}</p>
                         <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
                     </div>
                     <p className="break-words text-sm text-muted-foreground">with {plan.chef?.displayName} · {plan.mealsPerWeek} meals for {plan.servings}</p>
@@ -66,7 +67,6 @@ const MyPlans = () => {
     const { data: plans = [], isLoading } = useQuery<PlanSummary[]>({ queryKey: ["my-plans"], queryFn: () => api.get("/meal-plans/mine"), enabled: isAuthenticated });
 
     const open = plans.filter((p) => OPEN.includes(p.status));
-    const past = plans.filter((p) => !OPEN.includes(p.status));
 
     return (
         <CustomerPortal>
@@ -86,18 +86,14 @@ const MyPlans = () => {
                     <div className="rounded-[2rem] bg-ink p-8 text-center text-ink-foreground md:p-14">
                         <CalendarDays className="mx-auto mb-4 h-12 w-12 text-primary" />
                         <h2 className="font-display text-2xl font-extrabold md:text-4xl">No more "what's for dinner?"</h2>
-                        <p className="mx-auto mb-6 mt-2 max-w-md text-ink-foreground/70">Plan 1, 3 or 6 months of food you love with a local chef. No payment up front, and you can skip any week.</p>
+                        <p className="mx-auto mb-6 mt-2 max-w-md text-ink-foreground/70">Plan anything from 1 week to 6 months of food you love with a local chef. No payment up front, and you can skip any week.</p>
                         <Button asChild size="lg" className="h-12 rounded-full font-bold"><Link to="/meal-plans">See how it works <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
                     </div>
                 ) : (
                     <div className="space-y-8">
+                        <ReorderSuggestions />
                         {open.length > 0 && <div className="grid gap-4 md:grid-cols-2">{open.map((p) => <PlanCard key={p.id} plan={p} />)}</div>}
-                        {past.length > 0 && (
-                            <section>
-                                <h2 className="mb-3 font-display text-xl font-bold">Past plans</h2>
-                                <div className="grid gap-4 md:grid-cols-2">{past.map((p) => <PlanCard key={p.id} plan={p} />)}</div>
-                            </section>
-                        )}
+                        <CustomerPlanHistory />
                     </div>
                 )}
 

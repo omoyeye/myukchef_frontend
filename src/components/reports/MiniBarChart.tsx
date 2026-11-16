@@ -5,17 +5,19 @@ import { cn } from '@/lib/utils';
  * A light bar chart for daily figures: one series, one colour, value on hover or tap, and a text
  * summary for screen readers. No chart library needed.
  */
-export function MiniBarChart({ data, label, format, className }: {
+export function MiniBarChart({ data, label, format, className, labelOf }: {
     data: { date: string; value: number }[];
     label: string;
     format: (n: number) => string;
     className?: string;
+    /** How to name each bar; days by default. */
+    labelOf?: (date: string) => string;
 }) {
     const [active, setActive] = useState<number | null>(null);
     const max = Math.max(...data.map((d) => d.value), 0);
     const total = data.reduce((s, d) => s + d.value, 0);
     const shown = active !== null ? data[active] : null;
-    const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const day = labelOf ?? ((iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
 
     return (
         <figure className={cn('space-y-2', className)}>

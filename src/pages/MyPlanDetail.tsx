@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { PlanLengthPicker } from "@/components/plans/PlanLengthPicker";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { AlertTriangle, ArrowLeft, CalendarClock, ChefHat, ChevronDown, Lock, Loader2, MapPin, MessageCircle, Minus, PartyPopper, PauseCircle, Pencil, PlayCircle, Plus, RefreshCw, ShieldCheck, SkipForward, Star, Undo2, XCircle } from "lucide-react";
@@ -20,7 +21,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
-import { dietaryLabel, inDays, money, PLAN_STATUS, PlanDetail, planDate, planName, PlanWeek, totalMeals, WEEK_STATUS, WINDOWS } from "@/lib/mealPlans";
+import { dietaryLabel, inDays, money, PLAN_STATUS, PlanDetail, planDate, planName, PlanWeek, totalMeals, WEEK_STATUS, weeksOf, WINDOWS } from "@/lib/mealPlans";
 import { cn } from "@/lib/utils";
 import { allergenLabel, allergenSummary } from "@/lib/allergens";
 
@@ -191,8 +192,10 @@ const MyPlanDetail = () => {
     const [cancelOpen, setCancelOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
     const [reviewOpen, setReviewOpen] = useState(false);
-    const [renewOpen, setRenewOpen] = useState(false);
-    const [renewMonths, setRenewMonths] = useState(3);
+    // ?reorder=1 (from "Order again" suggestions) opens the order-again dialog straight away.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [renewOpen, setRenewOpen] = useState(searchParams.get("reorder") === "1");
+    const [renewWeeks, setRenewWeeks] = useState<number | null>(null);
 
     useEffect(() => {
         if (!authLoading && !isAuthenticated) navigate(`/login?redirect=${encodeURIComponent(`/my-plans/${id}`)}`, { replace: true });
@@ -228,8 +231,8 @@ const MyPlanDetail = () => {
         },
     });
     const renew = useMutation({
-        mutationFn: () => api.post(`/meal-plans/${planId}/renew`, { durationMonths: renewMonths }),
-        onSuccess: (next: any) => { toast.success("Renewal sent to your chef"); setRenewOpen(false); refresh(); navigate(`/my-plans/${next.id}`); },
+        mutationFn: () => api.post(`/meal-plans/${planId}/renew`, { durationWeeks: renewWeeks ?? (plan ? weeksOf(plan) : 4) }),
+        onSuccess: (next: any) => { toast.success("Request sent to your chef"); setRenewOpen(false); refresh(); navigate(`/my-plans/${next.id}`); },
         onError: (e: Error) => toast.error(e.message),
     });
 
@@ -258,7 +261,7 @@ const MyPlanDetail = () => {
 
     return (
         <Layout>
-            <SEO title={planName(plan.durationMonths)} description="Manage your meal plan." noindex />
+            <SEO title={planName(plan)} description="Manage your meal plan." noindex />
             <div className="container max-w-6xl px-4 pb-10">
                 <Link to="/my-plans" className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="h-4 w-4" />My plans</Link>
 
@@ -272,7 +275,7 @@ const MyPlanDetail = () => {
                             </Link>
                             <div className="min-w-0 flex-1">
                                 <span className={cn("inline-block rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
-                                <h1 className="mt-1.5 font-display text-2xl font-extrabold md:text-4xl">{planName(plan.durationMonths)}</h1>
+                                <h1 className="mt-1.5 font-display text-2xl font-extrabold md:text-4xl">{planName(plan)}</h1>
                                 <p className="break-words text-ink-foreground/70">with {plan.chef.displayName} · {plan.mealsPerWeek} meals for {plan.servings}</p>
                             </div>
                         </div>
@@ -315,8 +318,8 @@ const MyPlanDetail = () => {
                     )}
                     {canRenew && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                            <div><p className="font-bold">Keep it going?</p><p className="text-sm text-muted-foreground">Same chef, same dishes, starting after this plan.</p></div>
-                            <Button className="h-11" onClick={() => { setRenewMonths(plan.durationMonths); setRenewOpen(true); }}><RefreshCw className="mr-2 h-4 w-4" />Renew plan</Button>
+                            <div><p className="font-bold">{plan.status === "completed" || plan.status === "cancelled" ? "Order this plan again?" : "Keep it going?"}</p><p className="text-sm text-muted-foreground">Same chef, same dishes, any length from 1 week to 6 months.</p></div>
+                            <Button className="h-11" onClick={() => { setRenewWeeks(weeksOf(plan)); setRenewOpen(true); }}><RefreshCw className="mr-2 h-4 w-4" />{plan.status === "completed" || plan.status === "cancelled" ? "Order again" : "Renew plan"}</Button>
                         </div>
                     )}
                     {plan.canReview && !plan.myReview && (
@@ -428,20 +431,13 @@ const MyPlanDetail = () => {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
+            <Dialog open={renewOpen && canRenew} onOpenChange={(open) => { setRenewOpen(open); if (!open && searchParams.get("reorder")) setSearchParams({}, { replace: true }); }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Renew with {plan.chef.displayName}</DialogTitle>
-                        <DialogDescription>We'll send your chef a new request with the same dishes and delivery day. This plan isn't affected, and nothing is charged today.</DialogDescription>
+                        <DialogTitle>Order again from {plan.chef.displayName}</DialogTitle>
+                        <DialogDescription>We'll send your chef a new request with the same dishes, meals and delivery day. Choose how long. Nothing is charged today.</DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-3 gap-2">
-                        {[1, 3, 6].map((months) => (
-                            <button key={months} type="button" aria-pressed={renewMonths === months} onClick={() => setRenewMonths(months)} className={cn("min-h-20 rounded-2xl border-2 text-center", renewMonths === months ? "border-primary bg-primary/5" : "hover:border-primary/40")}>
-                                <span className="block font-display text-3xl font-extrabold">{months}</span>
-                                <span className="text-sm">{months === 1 ? "month" : "months"}</span>
-                            </button>
-                        ))}
-                    </div>
+                    <PlanLengthPicker weeks={renewWeeks ?? weeksOf(plan)} onChange={setRenewWeeks} compact />
                     <DialogFooter className="gap-2">
                         <Button variant="outline" className="h-11" onClick={() => setRenewOpen(false)}>Not now</Button>
                         <Button className="h-11" disabled={renew.isPending} onClick={() => renew.mutate()}>{renew.isPending ? "Sending..." : "Send request"}</Button>

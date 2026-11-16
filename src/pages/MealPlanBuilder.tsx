@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { chefsPath, formatMiles, useUserLocation } from "@/lib/location";
 import { ALLERGENS, allergenLabel, allergenSummary } from "@/lib/allergens";
-import { DIETARY_OPTIONS, money, PlanConfig, planDate, WINDOWS } from "@/lib/mealPlans";
+import { DIETARY_OPTIONS, discountForWeeks, money, PlanConfig, planDate, planLength, WINDOWS } from "@/lib/mealPlans";
 import { cn } from "@/lib/utils";
 
 const DRAFT_KEY = "meal-plan-draft";
@@ -25,7 +25,7 @@ const STEPS = ["Chef", "Plan", "Food", "Delivery", "Review"];
 
 const initialDraft = {
     chefId: null as number | null,
-    durationMonths: 3,
+    durationWeeks: 13,
     mealsPerWeek: 5,
     servings: 2,
     dietary: [] as string[],
@@ -85,11 +85,15 @@ const MealPlanBuilder = () => {
     const { location } = useUserLocation();
 
     const presetChef = Number(params.get("chef")) || null;
-    const presetMonths = Number(params.get("months")) || null;
+    // ?weeks=6, or ?months=3 from older links.
+    const MONTH_WEEKS: Record<number, number> = { 1: 4, 3: 13, 6: 26 };
+    const presetWeeks = Number(params.get("weeks")) || MONTH_WEEKS[Number(params.get("months"))] || null;
     const [draft, setDraft] = useState<Draft>(() => {
         const saved = readDraft();
         const base = saved && (!presetChef || saved.chefId === presetChef) ? saved : initialDraft;
-        return { ...base, chefId: presetChef ?? base.chefId, durationMonths: presetMonths ?? base.durationMonths };
+        // Drafts saved before flexible lengths have months instead of weeks.
+        const savedWeeks = (base as Partial<Draft> & { durationMonths?: number }).durationWeeks ?? MONTH_WEEKS[(base as { durationMonths?: number }).durationMonths ?? 3] ?? 13;
+        return { ...base, chefId: presetChef ?? base.chefId, durationWeeks: Math.min(26, Math.max(1, presetWeeks ?? savedWeeks)) };
     });
     const [step, setStep] = useState(() => (params.get("resume") ? 4 : presetChef || draft.chefId ? 1 : 0));
     const [agreed, setAgreed] = useState(false);
@@ -136,8 +140,9 @@ const MealPlanBuilder = () => {
         if (preferred && !draft.address.street) update({ address: { ...draft.address, street: preferred.street, city: preferred.city, postcode: preferred.postcode } });
     }, [addresses]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const planOption = config?.durations.find((d) => d.months === draft.durationMonths);
-    const discount = planOption?.discountPercent ?? 0;
+    const weeks = draft.durationWeeks;
+    const discount = discountForWeeks(weeks, config);
+    const nextSaving = [...(config?.discountTiers ?? [])].sort((a, b) => a.fromWeeks - b.fromWeeks).find((t) => t.fromWeeks > weeks && t.discountPercent > discount);
     const chosen = dishes.filter((d) => draft.rotation.includes(d.id));
     const averagePrice = chosen.length ? chosen.reduce((sum, d) => sum + d.price, 0) / chosen.length : 0;
     const portions = draft.mealsPerWeek * draft.servings;
@@ -154,7 +159,7 @@ const MealPlanBuilder = () => {
     const canContinue = [!!draft.chefId, true, chosen.length > 0 && (!hasHealthDetails || healthConsent), !!draft.startDate && addressComplete, agreed][step];
 
     const submit = useMutation({
-        mutationFn: () => api.post("/meal-plans", { ...draft, chefId: draft.chefId, healthConsent }),
+        mutationFn: () => api.post("/meal-plans", { ...draft, durationMonths: undefined, chefId: draft.chefId, healthConsent }),
         onSuccess: (plan: any) => {
             try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* Nothing to clear. */ }
             qc.invalidateQueries({ queryKey: ["my-plans"] });
@@ -182,7 +187,7 @@ const MealPlanBuilder = () => {
                 </div>
                 <div className="min-w-0">
                     <p className="truncate font-bold">{chefProfile?.displayName ?? "Choose a chef"}</p>
-                    <p className="text-sm text-muted-foreground">{draft.durationMonths} month plan · {planOption?.weeks ?? "-"} deliveries</p>
+                    <p className="text-sm text-muted-foreground">{planLength(weeks)} · {weeks} {weeks === 1 ? "delivery" : "deliveries"}</p>
                 </div>
             </div>
             <dl className="mt-4 space-y-2 border-t pt-4 text-sm">
@@ -193,7 +198,7 @@ const MealPlanBuilder = () => {
                         {discount > 0 && <div className="flex justify-between text-primary"><dt>{discount}% plan saving</dt><dd>-{money(savingPerWeek)}</dd></div>}
                         <div className="flex justify-between"><dt className="text-muted-foreground">Delivery</dt><dd>{money(fee)}</dd></div>
                         <div className="flex items-baseline justify-between border-t pt-3"><dt className="font-bold">About, per week</dt><dd className="font-display text-2xl font-extrabold">{money(weeklyTotal)}</dd></div>
-                        <p className="text-xs text-muted-foreground">Around {money(weeklyTotal * (planOption?.weeks ?? 0))} across the plan if you take every delivery. Prices depend on your dishes each week. Nothing to pay today.</p>
+                        <p className="text-xs text-muted-foreground">Around {money(weeklyTotal * weeks)} across the plan if you take every delivery. Prices depend on your dishes each week. Nothing to pay today.</p>
                     </>
                 ) : (
                     <p className="pt-1 text-muted-foreground">Choose your dishes to see your price.</p>
@@ -282,25 +287,48 @@ const MealPlanBuilder = () => {
                                     <p className="mt-1 text-muted-foreground">You can skip or pause any week later on.</p>
                                 </div>
                                 <fieldset>
-                                    <legend className="mb-3 font-bold">Plan length</legend>
-                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                                        {config?.durations.map((d) => {
-                                            const selected = draft.durationMonths === d.months;
+                                    <legend className="mb-1 font-bold">Plan length</legend>
+                                    <p className="mb-3 text-sm text-muted-foreground">Anything from 1 week to 6 months. Longer plans save more.</p>
+                                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                                        {config?.presets.map((d) => {
+                                            const selected = weeks === d.weeks;
                                             return (
                                                 <button
-                                                    key={d.months}
+                                                    key={d.weeks}
                                                     type="button"
                                                     aria-pressed={selected}
-                                                    onClick={() => update({ durationMonths: d.months })}
-                                                    className={cn("rounded-3xl border-2 p-3 text-center transition-all sm:p-5", selected ? "border-primary bg-primary/5" : "bg-card hover:border-primary/40")}
+                                                    onClick={() => update({ durationWeeks: d.weeks })}
+                                                    className={cn("rounded-2xl border-2 p-2.5 text-center transition-all", selected ? "border-primary bg-primary/5" : "bg-card hover:border-primary/40")}
                                                 >
-                                                    <span className="block font-display text-4xl font-extrabold sm:text-5xl">{d.months}</span>
-                                                    <span className="block text-sm font-semibold">{d.months === 1 ? "month" : "months"}</span>
-                                                    <span className="mt-1 block text-xs text-muted-foreground">{d.weeks} deliveries</span>
-                                                    <span className={cn("mt-2 block rounded-full px-1 py-1 text-xs font-bold", d.discountPercent > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground")}>{d.discountPercent > 0 ? `${d.discountPercent}% off` : "No saving"}</span>
+                                                    <span className="block font-display text-2xl font-extrabold">{d.label.split(" ")[0]}</span>
+                                                    <span className="block text-xs font-semibold">{d.label.split(" ")[1]}</span>
+                                                    <span className={cn("mt-1 block text-[11px] font-bold", d.discountPercent > 0 ? "text-primary" : "text-muted-foreground")}>{d.discountPercent > 0 ? `${d.discountPercent}% off` : "No saving"}</span>
                                                 </button>
                                             );
                                         })}
+                                    </div>
+                                    <div className="mt-4 rounded-2xl border bg-card p-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <label htmlFor="plan-weeks" className="text-sm font-semibold">Or choose any length</label>
+                                            <span className="font-display text-xl font-extrabold" aria-live="polite">{planLength(weeks)}</span>
+                                        </div>
+                                        <input
+                                            id="plan-weeks"
+                                            type="range"
+                                            min={config?.minWeeks ?? 1}
+                                            max={config?.maxWeeks ?? 26}
+                                            step={1}
+                                            value={weeks}
+                                            onChange={(e) => update({ durationWeeks: Number(e.target.value) })}
+                                            aria-valuetext={`${planLength(weeks)}, ${weeks} deliveries`}
+                                            className="mt-3 w-full accent-primary"
+                                        />
+                                        <div className="mt-1 flex justify-between text-xs text-muted-foreground"><span>1 week</span><span>6 months</span></div>
+                                        <p className="mt-2 text-sm text-muted-foreground">
+                                            {weeks} weekly {weeks === 1 ? "delivery" : "deliveries"}
+                                            {discount > 0 ? <span className="font-semibold text-primary"> · {discount}% off</span> : null}
+                                            {nextSaving ? <> · Choose {planLength(nextSaving.fromWeeks)} or more to save {nextSaving.discountPercent}%</> : null}
+                                        </p>
                                     </div>
                                 </fieldset>
                                 <div className="space-y-3">
@@ -489,7 +517,7 @@ const MealPlanBuilder = () => {
                                     <ul className="space-y-2 text-sm text-ink-foreground/85">
                                         <li className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-primary" />You pay for each delivery you receive. We'll confirm how to pay when your chef accepts.</li>
                                         <li className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-primary" />Change, skip or cancel a delivery up to {config?.cutoffHours ?? 48} hours before it. After that it goes ahead.</li>
-                                        <li className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-primary" />Your plan ends after {planOption?.weeks} deliveries and never renews by itself.</li>
+                                        <li className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-primary" />Your plan ends after {weeks} {weeks === 1 ? "delivery" : "deliveries"} and never renews by itself. You can order it again in one tap.</li>
                                     </ul>
                                 </div>
                                 <label className="flex min-h-11 items-start gap-3 rounded-2xl border bg-card p-4">
@@ -525,7 +553,7 @@ const MealPlanBuilder = () => {
                     <div className="mx-auto flex max-w-2xl items-center gap-2">
                         <Button variant="outline" size="icon" aria-label="Back" className="h-12 w-12 shrink-0 rounded-full" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4" /></Button>
                         <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs text-muted-foreground">{chosen.length ? "About, per week" : `${draft.durationMonths} month plan`}</p>
+                            <p className="truncate text-xs text-muted-foreground">{chosen.length ? "About, per week" : `${planLength(weeks, true)} plan`}</p>
                             <p className="truncate font-display text-lg font-extrabold leading-tight">{chosen.length ? money(weeklyTotal) : `${portions} portions a week`}</p>
                         </div>
                         <Button className="h-12 shrink-0 rounded-full px-5 font-bold" disabled={!canContinue || submit.isPending} onClick={handleNext}>

@@ -25,6 +25,8 @@ export interface PlanSummary {
     id: number;
     chefId: number;
     durationMonths: number;
+    /** The real length: any number of weeks from 1 to 26. */
+    durationWeeks?: number | null;
     mealsPerWeek: number;
     servings: number;
     deliveryWindow: string;
@@ -80,6 +82,10 @@ export interface ChefReview {
 
 export interface PlanConfig {
     durations: { months: number; weeks: number; discountPercent: number }[];
+    minWeeks: number;
+    maxWeeks: number;
+    presets: { weeks: number; label: string; discountPercent: number }[];
+    discountTiers: { fromWeeks: number; label: string; discountPercent: number }[];
     cutoffHours: number;
     leadDays: number;
     deliveryFee: number;
@@ -102,7 +108,48 @@ export const WINDOWS = [
 export const dietaryLabel = (id: string) => DIETARY_OPTIONS.find((d) => d.id === id)?.label ?? id;
 export const money = (n: number) => `£${Number(n).toFixed(2)}`;
 export const planDate = (iso: string, pattern = "EEE d MMM") => format(parseISO(iso), pattern);
-export const planName = (months: number) => `${months} month plan`;
+/** "1 week", "6 weeks", "3 months"; or describing a plan ("6 week"). Whole months read as months. */
+export function planLength(weeks: number, describing = false) {
+    const months = weeks === 4 ? 1 : weeks === 8 ? 2 : weeks === 13 ? 3 : weeks === 26 ? 6 : 0;
+    if (months) return `${months} month${months === 1 || describing ? "" : "s"}`;
+    return `${weeks} week${weeks === 1 || describing ? "" : "s"}`;
+}
+const MONTH_WEEKS: Record<number, number> = { 1: 4, 3: 13, 6: 26 };
+/** How many weekly deliveries a plan has. Older plans only know their months. */
+export const weeksOf = (plan: { durationWeeks?: number | null; durationMonths: number }) => plan.durationWeeks ?? MONTH_WEEKS[plan.durationMonths] ?? plan.durationMonths * 4;
+/** "6 week plan", "3 month plan". */
+export const planName = (plan: { durationWeeks?: number | null; durationMonths: number }) => `${planLength(weeksOf(plan), true)} plan`;
+/** The saving for a plan of this many weeks: longer plans save more. */
+export const discountForWeeks = (weeks: number, config?: Pick<PlanConfig, "discountTiers"> | null) =>
+    [...(config?.discountTiers ?? [])].sort((a, b) => b.fromWeeks - a.fromWeeks).find((t) => weeks >= t.fromWeeks)?.discountPercent ?? 0;
+
+/** A finished plan in the customer's history. */
+export interface PlanHistoryItem extends PlanSummary {
+    status: string;
+    chef: { id: number; displayName: string; avatar: string | null; specialty: string | null };
+    weeksTotal: number;
+    weeksDelivered: number;
+    mealsDelivered: number;
+    paidTotal: number;
+    favouriteDishes: { name: string; image: string; meals: number }[];
+    lastDelivery: string | null;
+    canReorder: boolean;
+    reason?: string;
+    nextPlanId?: number;
+}
+/** A plan worth ordering again. */
+export interface ReorderSuggestion {
+    planId: number;
+    chef: { id: number; displayName: string; avatar: string | null; specialty: string | null };
+    reason: string;
+    durationWeeks: number;
+    length: string;
+    mealsPerWeek: number;
+    servings: number;
+    favouriteDishes: { name: string; image: string; meals: number }[];
+    weeklyPrice: number | null;
+    endedOn: string;
+}
 export const inDays = (days: number) => format(addDays(new Date(), days), "yyyy-MM-dd");
 
 export const PLAN_STATUS: Record<string, { label: string; className: string }> = {

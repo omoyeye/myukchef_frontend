@@ -60,6 +60,12 @@ const MyBookingDetail = lazy(() => import("./pages/MyBookingDetail"));
 const ChefAgreement = lazy(() => import("./pages/ChefAgreement"));
 const SupportInbox = lazy(() => import("./pages/admin/SupportInbox"));
 const SavedChefs = lazy(() => import("./pages/SavedChefs"));
+const Videos = lazy(() => import("./pages/Videos"));
+const GetApp = lazy(() => import("./pages/GetApp"));
+const VideoDetail = lazy(() => import("./pages/Videos").then((m) => ({ default: m.VideoDetail })));
+const VideoModeration = lazy(() => import("./pages/admin/VideoModeration"));
+const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
+const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
 const MealPlans = lazy(() => import("./pages/MealPlans"));
 const MealPlanBuilder = lazy(() => import("./pages/MealPlanBuilder"));
 const MyPlans = lazy(() => import("./pages/MyPlans"));
@@ -110,6 +116,9 @@ const App = () => (
               <Route path="/meal-plans/new" element={<MealPlanBuilder />} />
               <Route path="/my-plans" element={<MyPlans />} />
               <Route path="/saved-chefs" element={<SavedChefs />} />
+              <Route path="/videos" element={<Videos />} />
+              <Route path="/app" element={<GetApp />} />
+              <Route path="/videos/:id" element={<VideoDetail />} />
               <Route path="/my-bookings/:id" element={<MyBookingDetail />} />
               <Route path="/my-plans/:id" element={<MyPlanDetail />} />
 
@@ -151,6 +160,9 @@ const App = () => (
                 <Route path="payments-email" element={<IntegrationSettings />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="messages" element={<MessageTemplates />} />
+                <Route path="videos" element={<VideoModeration />} />
+                <Route path="system" element={<SystemHealth />} />
+                <Route path="banners" element={<BannerManagement />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

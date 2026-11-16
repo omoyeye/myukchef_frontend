@@ -50,7 +50,7 @@ const MealPlanManagement = () => {
         <div className="space-y-4">
             <div>
                 <h1 className="text-2xl font-bold">Meal Plans</h1>
-                <p className="text-sm text-muted-foreground">Oversee every 1, 3 and 6 month plan, correct deliveries and record payments.</p>
+                <p className="text-sm text-muted-foreground">Oversee every 1 week to 6 month plan, correct deliveries and record payments.</p>
             </div>
             <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {[["requested", "Waiting for chef"], ["active", "Active"], ["paused", "Paused"], ["completed", "Completed"]].map(([key, label]) => (
@@ -83,7 +83,7 @@ const MealPlanManagement = () => {
                                     <TableRow key={p.id}>
                                         <TableCell><div className="font-medium">{p.customerName}</div><div className="text-xs text-muted-foreground">{p.customerEmail}</div></TableCell>
                                         <TableCell>{p.chefName}</TableCell>
-                                        <TableCell className="whitespace-nowrap">{planName(p.durationMonths)}<div className="text-xs text-muted-foreground">{p.mealsPerWeek} meals for {p.servings}</div></TableCell>
+                                        <TableCell className="whitespace-nowrap">{planName(p)}<div className="text-xs text-muted-foreground">{p.mealsPerWeek} meals for {p.servings}</div></TableCell>
                                         <TableCell className="whitespace-nowrap">{p.weeksDelivered}/{p.weeksTotal}</TableCell>
                                         <TableCell>{money(p.estimatedTotal)}</TableCell>
                                         <TableCell><span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold", PLAN_STATUS[p.status]?.className)}>{PLAN_STATUS[p.status]?.label}</span></TableCell>
@@ -109,7 +109,7 @@ const MealPlanManagement = () => {
                         <form className="min-w-0 space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
                             <DialogHeader>
                                 <DialogTitle>Plan #{detail.id}: {detail.customerName} with {detail.chef.displayName}</DialogTitle>
-                                <DialogDescription>{planName(detail.durationMonths)}, {detail.mealsPerWeek} meals for {detail.servings}, {planDate(detail.startDate, "d MMM yyyy")} to {planDate(detail.endDate, "d MMM yyyy")}. {detail.deliveryAddress.street}, {detail.deliveryAddress.postcode}. {detail.deliveryAddress.phone}</DialogDescription>
+                                <DialogDescription>{planName(detail)}, {detail.mealsPerWeek} meals for {detail.servings}, {planDate(detail.startDate, "d MMM yyyy")} to {planDate(detail.endDate, "d MMM yyyy")}. {detail.deliveryAddress.street}, {detail.deliveryAddress.postcode}. {detail.deliveryAddress.phone}</DialogDescription>
                             </DialogHeader>
                             {owed > 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-950">{money(owed)} delivered and not yet marked as paid.</p>}
                             <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">

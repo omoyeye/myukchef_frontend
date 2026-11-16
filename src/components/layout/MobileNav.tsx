@@ -23,6 +23,8 @@ const moreLinks = [
     { label: 'My Meal Plans', href: '/my-plans' },
     { label: 'Find My Meal', href: '/recommend' },
     { label: 'Our Chefs', href: '/chefs' },
+    { label: 'Chef Videos', href: '/videos' },
+    { label: 'Get the App', href: '/app' },
     { label: 'Track Order', href: '/track-order' },
     { label: 'Rewards', href: '/profile?tab=rewards' },
     { label: 'Contact Us', href: '/support' },

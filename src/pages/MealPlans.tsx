@@ -14,11 +14,14 @@ import { PlanConfig } from "@/lib/mealPlans";
 import { heroDelay } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import heroChef from "@/assets/hero-chef.jpg";
+import { BannerAds } from "@/components/banners/BannerAds";
 
+// Keyed by weeks. Any length from 1 to 26 weeks can be chosen in the builder.
 const PLAN_COPY: Record<number, { title: string; blurb: string }> = {
-    1: { title: "Try it out", blurb: "A month to find your favourites and get to know your chef." },
-    3: { title: "Build the habit", blurb: "A full season of dinners, with a menu that changes as you do." },
-    6: { title: "Sorted for months", blurb: "Half a year with no more wondering what's for dinner." },
+    1: { title: "Try it out", blurb: "One week to taste the food and meet your chef. No commitment." },
+    4: { title: "Get to know your chef", blurb: "A month to find your favourites, with a menu that settles into your week." },
+    13: { title: "Build the habit", blurb: "A full season of dinners, with a menu that changes as you do." },
+    26: { title: "Sorted for months", blurb: "Half a year with no more wondering what's for dinner." },
 };
 
 const WEEK_PREVIEW = [
@@ -52,8 +55,8 @@ const MealPlans = () => {
     return (
         <Layout fullBleed>
             <SEO
-                title="Monthly Meal Plans from Local Chefs"
-                description="Plan 1, 3 or 6 months of home-cooked meals with a local chef you choose. Pick your dishes, skip any week, and pay only for what you receive."
+                title="Meal Plans from Local Chefs, 1 Week to 6 Months"
+                description="Plan anything from 1 week to 6 months of home-cooked meals with a local chef you choose. Pick your dishes, skip any week, and pay only for what you receive."
                 jsonLd={{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }}
             />
 
@@ -69,7 +72,7 @@ const MealPlans = () => {
                             <span style={heroDelay(220)} className="hero-rise block">Your menu.</span>
                             <span style={heroDelay(340)} className="hero-rise block"><span className="hero-underline text-primary">Every week.</span></span>
                         </h1>
-                        <p style={heroDelay(500)} className="hero-rise max-w-xl text-lg text-ink-foreground/70 md:text-xl">Choose a local chef, pick the food you love, and have it cooked and delivered for 1, 3 or 6 months.</p>
+                        <p style={heroDelay(500)} className="hero-rise max-w-xl text-lg text-ink-foreground/70 md:text-xl">Choose a local chef, pick the food you love, and have it cooked and delivered for as long as you like, from 1 week to 6 months.</p>
                         <div style={heroDelay(620)} className="hero-rise flex flex-col gap-3 sm:flex-row">
                             <Button asChild size="lg" className="group h-14 rounded-full px-8 text-base font-bold transition-transform hover:-translate-y-0.5">
                                 <Link to="/meal-plans/new">Build my plan <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" /></Link>
@@ -113,24 +116,25 @@ const MealPlans = () => {
             {/* DURATIONS */}
             <section className="py-14 md:py-20">
                 <div className="container">
+                    <BannerAds placement="meal_plans" className="mb-10" />
                     <div className="mb-8 max-w-2xl">
                         <h2 className="font-display text-3xl font-extrabold md:text-5xl">Pick how far ahead you'd like to plan</h2>
                         <p className="mt-2 text-muted-foreground md:text-lg">{bestDiscount > 0 ? `The longer you plan, the more you save, up to ${bestDiscount}% off every dish.` : "Plans are flexible, whichever length you choose."}</p>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-3 md:gap-6">
-                        {(config?.durations ?? []).map((d) => {
-                            const featured = d.months === 3;
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+                        {(config?.presets ?? []).filter((d) => PLAN_COPY[d.weeks]).map((d) => {
+                            const featured = d.weeks === 13;
                             return (
                                 <Link
-                                    key={d.months}
-                                    to={`/meal-plans/new?months=${d.months}`}
+                                    key={d.weeks}
+                                    to={`/meal-plans/new?weeks=${d.weeks}`}
                                     className={cn("group relative flex flex-col rounded-[2rem] border p-6 transition-all hover:-translate-y-1 hover:shadow-warm-lg md:p-8", featured ? "bg-ink text-ink-foreground" : "bg-card")}
                                 >
                                     {featured && <span className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">A good place to start</span>}
-                                    <p className="font-display text-6xl font-extrabold md:text-7xl">{d.months}</p>
-                                    <p className="font-display text-xl font-bold">{d.months === 1 ? "month" : "months"}</p>
-                                    <p className={cn("mt-4 text-lg font-bold", featured && "text-ink-foreground")}>{PLAN_COPY[d.months]?.title}</p>
-                                    <p className={cn("mt-1 flex-1", featured ? "text-ink-foreground/70" : "text-muted-foreground")}>{PLAN_COPY[d.months]?.blurb}</p>
+                                    <p className="font-display text-6xl font-extrabold md:text-7xl">{d.label.split(" ")[0]}</p>
+                                    <p className="font-display text-xl font-bold">{d.label.split(" ")[1]}</p>
+                                    <p className={cn("mt-4 text-lg font-bold", featured && "text-ink-foreground")}>{PLAN_COPY[d.weeks]?.title}</p>
+                                    <p className={cn("mt-1 flex-1", featured ? "text-ink-foreground/70" : "text-muted-foreground")}>{PLAN_COPY[d.weeks]?.blurb}</p>
                                     <dl className={cn("mt-5 space-y-1.5 border-t pt-4 text-sm", featured && "border-ink-foreground/15")}>
                                         <div className="flex justify-between"><dt>Weekly deliveries</dt><dd className="font-bold">{d.weeks}</dd></div>
                                         <div className="flex justify-between"><dt>Off every dish</dt><dd className="font-bold text-primary">{d.discountPercent > 0 ? `${d.discountPercent}%` : "Standard price"}</dd></div>
@@ -140,6 +144,7 @@ const MealPlans = () => {
                             );
                         })}
                     </div>
+                    <p className="mt-6 text-center text-muted-foreground">Want something else? Choose <Link to="/meal-plans/new" className="font-semibold text-primary underline-offset-4 hover:underline">any length from 1 week to 6 months</Link> when you build your plan.</p>
                 </div>
             </section>
 
