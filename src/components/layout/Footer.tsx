@@ -91,8 +91,8 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Loyalty Rewards
+                <Link to="/wallet" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Wallet and Rewards
                 </Link>
               </li>
               <li>

@@ -457,50 +457,10 @@ const AdminSettings = () => {
                 <TabsContent value="loyalty">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Loyalty Program</CardTitle>
-                            <CardDescription>Configure how customers earn and redeem rewards.</CardDescription>
+                            <CardTitle>Loyalty and referral rewards</CardTitle>
+                            <CardDescription>Points have been replaced by a wallet in pounds. Customers earn cashback and referral credit, you release it, and they spend it at checkout. Chefs can withdraw theirs.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between space-x-2">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base">Enable Points System</Label>
-                                    <p className="text-sm text-muted-foreground"> allow customers to earn points on every purchase.</p>
-                                </div>
-                                <Switch
-                                    checked={loyaltyConfig.enabled ?? true}
-                                    onCheckedChange={(checked) => setLoyaltyConfig({ ...loyaltyConfig, enabled: checked })}
-                                />
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="earn_ratio">Points per £1 spent</Label>
-                                    <Input
-                                        id="earn_ratio"
-                                        type="number"
-                                        value={loyaltyConfig.earnRatio || 10}
-                                        onChange={(e) => setLoyaltyConfig({ ...loyaltyConfig, earnRatio: parseInt(e.target.value) })}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="redeem_ratio">REDEMPTION: Points for £1 discount</Label>
-                                    <Input
-                                        id="redeem_ratio"
-                                        type="number"
-                                        value={loyaltyConfig.redeemRatio || 100}
-                                        onChange={(e) => setLoyaltyConfig({ ...loyaltyConfig, redeemRatio: parseInt(e.target.value) })}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="border-t bg-muted/50 px-6 py-4">
-                            <Button
-                                onClick={() => handleSave('loyalty_config', loyaltyConfig)}
-                                disabled={updateSettingMutation.isPending}
-                            >
-                                {updateSettingMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Loyalty Rules
-                            </Button>
-                        </CardFooter>
+                        <CardContent><Button asChild><a href="/admin/wallets?tab=rules">Set the rewards in Wallets &amp; rewards</a></Button></CardContent>
                     </Card>
                 </TabsContent>
 

@@ -11,7 +11,7 @@ const SECTIONS = [
     { icon: CalendarDays, label: "Meal plans", to: "/my-plans" },
     { icon: ShoppingBag, label: "Orders", to: "/profile?tab=history" },
     { icon: CalendarHeart, label: "Event bookings", to: "/profile?tab=bookings" },
-    { icon: Gift, label: "Rewards", to: "/profile?tab=rewards" },
+    { icon: Gift, label: "Wallet", to: "/wallet" },
     { icon: Heart, label: "Saved chefs", to: "/saved-chefs" },
 ];
 

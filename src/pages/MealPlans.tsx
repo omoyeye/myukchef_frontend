@@ -186,7 +186,7 @@ const MealPlans = () => {
                             { icon: PauseCircle, t: "Pause", d: "Stop for up to 12 weeks, then pick up where you left off." },
                             { icon: Wallet, t: "Pay as you go", d: "Pay per delivery, never for the whole plan up front." },
                             { icon: ShieldCheck, t: "Allergy aware", d: "Your chef sees your needs on every delivery." },
-                            { icon: Sparkles, t: "Earn rewards", d: "Collect points on every delivery." },
+                            { icon: Sparkles, t: "Earn rewards", d: "Cashback in your wallet on every delivery." },
                         ].map((item) => (
                             <li key={item.t} className="flex gap-3 rounded-2xl border bg-card p-4">
                                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"><item.icon className="h-5 w-5 text-primary" /></span>

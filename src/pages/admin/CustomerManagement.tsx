@@ -77,7 +77,7 @@ const CustomerManagement = () => {
                                     <TableHead>Name</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
-                                    <TableHead>Points</TableHead>
+                                    <TableHead>Wallet</TableHead>
                                     <TableHead>Joined</TableHead>
                                     <TableHead />
                                 </TableRow>
@@ -89,7 +89,7 @@ const CustomerManagement = () => {
                                         <TableCell className="font-medium">{a.name}</TableCell>
                                         <TableCell>{a.email}</TableCell>
                                         <TableCell><Badge variant={a.role === "admin" ? "default" : "secondary"} className="capitalize">{a.role === "admin" ? "Super Admin" : a.role}</Badge></TableCell>
-                                        <TableCell>{a.points}</TableCell>
+                                        <TableCell><a className="text-primary underline-offset-4 hover:underline" href={`/admin/wallets?tab=people&user=${a.id}`}>Wallet</a></TableCell>
                                         <TableCell className="whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString("en-GB")}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-end gap-1">
@@ -133,7 +133,6 @@ const CustomerManagement = () => {
                                         <option value="admin">Super Admin</option>
                                     </select>
                                 </div>
-                                <div className="space-y-2"><Label htmlFor="acct-points">Points</Label><Input id="acct-points" type="number" inputMode="numeric" min={0} value={editing.points} onChange={(e) => setEditing({ ...editing, points: Number(e.target.value) })} /></div>
                             </div>
                             <div className="space-y-2"><Label htmlFor="acct-password">New password</Label><Input id="acct-password" type="password" autoComplete="new-password" minLength={8} value={editing.password} onChange={(e) => setEditing({ ...editing, password: e.target.value })} /></div>
                             <DialogFooter className="gap-2">

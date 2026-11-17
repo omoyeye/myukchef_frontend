@@ -21,6 +21,7 @@ import SEO from '@/components/common/SEO';
 import { ReorderSuggestions } from '@/components/plans/PlanHistory';
 import heroChef from '@/assets/hero-chef.jpg';
 import { BannerAds } from '@/components/banners/BannerAds';
+import { WalletNudge } from '@/components/wallet/wallet';
 
 // React 18 only passes this browser setting through in lowercase.
 const HERO_IMAGE_PRIORITY = { fetchpriority: 'high' };
@@ -144,6 +145,9 @@ const Index = () => {
 
       {/* BANNER ADVERTS (from Super Admin, Banners) */}
       <div className="container [&:has(aside)]:pt-8"><BannerAds placement="home" /></div>
+
+      {/* WALLET NUDGE (signed-in customers with credit) */}
+      <div className="container [&:has(a)]:pt-6"><WalletNudge /></div>
 
       {/* ORDER A PLAN AGAIN (signed-in customers only) */}
       <div className="container [&:has(section)]:pt-10"><ReorderSuggestions /></div>
@@ -321,7 +325,7 @@ const Index = () => {
             {[
               { icon: ShieldCheck, t: 'Reviewed chefs', d: 'Every chef and dish is reviewed before going live.' },
               { icon: Clock, t: 'Order tracking', d: 'Updates from kitchen to door.' },
-              { icon: Star, t: `${settings?.loyalty_config?.earnRatio || 10} points per £1`, d: 'Earn rewards on every order.' },
+              { icon: Star, t: 'Cashback on every order', d: 'Rewards go into your MYUKCHEF wallet.' },
             ].map((f) => (
               <div key={f.t} className="flex gap-4 items-start">
                 <div className="h-12 w-12 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center"><f.icon className="h-6 w-6 text-primary" /></div>

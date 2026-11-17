@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import SEO from "@/components/common/SEO";
 import { Clapperboard, ShieldCheck, CalendarDays, CalendarHeart, ChefHat, ExternalLink, LayoutDashboard, Loader2, Plus, ShoppingBag, Star, Trash2, UserRound, Wallet, Upload, UtensilsCrossed, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { WalletPanel } from "@/components/wallet/wallet";
 
 interface Chef {
     id: number;
@@ -285,7 +286,7 @@ const ChefDashboard = () => {
 
                     <TabsContent value="plans"><ChefPlansPanel /></TabsContent>
                     <TabsContent value="reviews"><ChefReviewsPanel /></TabsContent>
-                    <TabsContent value="payouts" className="space-y-10"><ChefEarnings /><ChefPayouts /></TabsContent>
+                    <TabsContent value="payouts" className="space-y-10"><section aria-labelledby="wallet-heading" className="space-y-3"><h2 id="wallet-heading" className="text-xl font-semibold">Wallet</h2><p className="text-sm text-muted-foreground">Rewards like referral credit, released by MYUKCHEF. Use it on an order or withdraw it.</p><WalletPanel /></section><ChefEarnings /><ChefPayouts /></TabsContent>
                     <TabsContent value="compliance"><div className="space-y-10"><ChefCredentials /><ChefCompliance /></div></TabsContent>
 
                     {/* MY PRODUCTS */}

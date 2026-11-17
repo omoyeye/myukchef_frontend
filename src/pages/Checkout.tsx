@@ -22,6 +22,7 @@ import SEO from '@/components/common/SEO';
 import { WhenAndTip } from '@/components/checkout/WhenAndTip';
 import { useQuery } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWallet, WalletAtCheckout, walletDiscount } from '@/components/wallet/wallet';
 
 const checkoutSchema = z.object({
     firstName: z.string().min(2, 'First name is required'),
@@ -58,6 +59,18 @@ const Checkout = () => {
     // When the food is wanted (null means as soon as possible), and an optional tip for the chefs.
     const [when, setWhen] = useState<string | null>(null);
     const [tip, setTip] = useState(0);
+
+    // With Stripe switched on, the customer pays by card before the order reaches the chefs.
+    const { data: payment } = useQuery<{ cardPayments: boolean; testMode: boolean }>({
+        queryKey: ['payment-config'],
+        queryFn: () => api.get('/orders/payment-config'),
+        staleTime: 60_000,
+    });
+    const cardPayments = !!payment?.cardPayments;
+
+    // The wallet: suggested when there's credit, off until the customer switches it on.
+    const { data: wallet } = useWallet();
+    const [useWalletCredit, setUseWalletCredit] = useState(false);
 
     const form = useForm<CheckoutFormValues>({
         resolver: zodResolver(checkoutSchema),
@@ -119,13 +132,8 @@ const Checkout = () => {
         return Math.max(0, totalBeforeDiscount - discountValue) + tip;
     };
 
-    // With Stripe switched on, the customer pays by card before the order reaches the chefs.
-    const { data: payment } = useQuery<{ cardPayments: boolean; testMode: boolean }>({
-        queryKey: ['payment-config'],
-        queryFn: () => api.get('/orders/payment-config'),
-        staleTime: 60_000,
-    });
-    const cardPayments = !!payment?.cardPayments;
+    const walletOff = walletDiscount(wallet, calculateDiscountedTotal() - tip, useWalletCredit);
+    const toPay = Math.max(0, calculateDiscountedTotal() - walletOff);
 
     const onSubmit = async (data: CheckoutFormValues) => {
         setIsSubmitting(true);
@@ -137,6 +145,7 @@ const Checkout = () => {
                 discountCode: appliedDiscount?.code,
                 scheduledFor: when,
                 tip,
+                useWallet: walletOff > 0,
                 deliveryAddress: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -471,6 +480,13 @@ const Checkout = () => {
 
                                         <Separator className="my-6" />
 
+                                        {user && <div className="mb-4"><WalletAtCheckout orderTotalBeforeTip={calculateDiscountedTotal() - tip} use={useWalletCredit} onChange={setUseWalletCredit} /></div>}
+                                        {walletOff > 0 && (
+                                            <div className="flex justify-between pb-2 text-base">
+                                                <span className="text-muted-foreground font-medium">From your wallet</span>
+                                                <span className="font-bold text-emerald-700">−{formatPrice(walletOff)}</span>
+                                            </div>
+                                        )}
                                         {tip > 0 && (
                                             <div className="flex justify-between pb-2 text-base">
                                                 <span className="text-muted-foreground font-medium">Tip for your chef</span>
@@ -480,7 +496,7 @@ const Checkout = () => {
                                         <div className="flex justify-between items-end pb-4">
                                             <span className="font-extrabold text-2xl tracking-tight">Total</span>
                                             <div className="text-right">
-                                                <span className="block font-black text-4xl text-primary">{formatPrice(calculateDiscountedTotal())}</span>
+                                                <span className="block font-black text-4xl text-primary">{formatPrice(toPay)}</span>
                                             </div>
                                         </div>
 
@@ -536,9 +552,9 @@ const Checkout = () => {
                                                 {cardPayments ? 'Opening secure payment...' : 'Processing...'}
                                             </>
                                         ) : cardPayments ? (
-                                            <><Lock className="mr-3 h-5 w-5" />Pay · {formatPrice(calculateDiscountedTotal())}</>
+                                            <><Lock className="mr-3 h-5 w-5" />Pay · {formatPrice(toPay)}</>
                                         ) : (
-                                            `Place order · ${formatPrice(calculateDiscountedTotal())}`
+                                            `Place order · ${formatPrice(toPay)}`
                                         )}
                                     </Button>
                                 </CardFooter>

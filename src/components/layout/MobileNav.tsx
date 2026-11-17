@@ -26,7 +26,7 @@ const moreLinks = [
     { label: 'Chef Videos', href: '/videos' },
     { label: 'Get the App', href: '/app' },
     { label: 'Track Order', href: '/track-order' },
-    { label: 'Rewards', href: '/profile?tab=rewards' },
+    { label: 'My Wallet', href: '/wallet' },
     { label: 'Contact Us', href: '/support' },
     { label: 'Profile', href: '/profile' },
     { label: 'Chef Portal', href: '/chef/login' },

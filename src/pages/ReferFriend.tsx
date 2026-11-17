@@ -10,14 +10,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { SITE_URL } from '@/lib/site';
 
-interface Referral { enabled: boolean; points: number; code: string; joined: number; rewarded: number }
+interface Referral { enabled: boolean; newCustomer: number; referrer: number; code: string; joined: number; rewarded: number }
+const pounds = (n: number) => `£${Number(n).toFixed(2).replace(/\.00$/, "")}`;
 
-/** Each customer's own code to share. When a friend's first order is delivered, both get points. */
+/** Each person's own code to share. When a friend's first order is delivered, both get wallet credit. */
 const ReferFriend = () => {
     const { user } = useAuth();
     const { data, isLoading } = useQuery<Referral>({ queryKey: ['referral'], queryFn: () => api.get('/auth/referral'), enabled: !!user });
     const link = data ? `${SITE_URL}/register?ref=${data.code}` : '';
-    const message = data ? `Try MYUKCHEF, home-cooked food from local chefs. Sign up with my code ${data.code} and we both get ${data.points} points: ${link}` : '';
+    const message = data ? `Try MYUKCHEF, home-cooked food from local chefs. Sign up with my code ${data.code} and get ${pounds(data.newCustomer)} off after your first order: ${link}` : '';
 
     const share = async () => {
         if (navigator.share) { await navigator.share({ title: 'MYUKCHEF', text: message, url: link }).catch(() => undefined); return; }
@@ -27,12 +28,12 @@ const ReferFriend = () => {
 
     return (
         <Layout>
-            <SEO noindex title="Refer a friend" description="Share MYUKCHEF with friends and earn points." />
+            <SEO noindex title="Refer a friend" description="Share MYUKCHEF with friends and earn wallet credit." />
             <div className="container max-w-xl py-12">
                 <div className="mb-8 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"><Gift className="h-8 w-8 text-primary" /></div>
-                    <h1 className="text-3xl font-black tracking-tight">Give points, get points</h1>
-                    <p className="mt-2 text-muted-foreground">{data ? `When a friend joins with your code and their first order is delivered, you each get ${data.points} points.` : 'Share MYUKCHEF with friends and you both earn points.'}</p>
+                    <h1 className="text-3xl font-black tracking-tight">{data ? `Give ${pounds(data.newCustomer)}, get ${pounds(data.referrer)}` : "Refer a friend"}</h1>
+                    <p className="mt-2 text-muted-foreground">{data ? `When a friend joins with your code and their first order is delivered, they get ${pounds(data.newCustomer)} and you get ${pounds(data.referrer)} in your wallets.` : 'Share MYUKCHEF with friends and you both get wallet credit.'}</p>
                 </div>
                 {!user ? (
                     <Card><CardContent className="space-y-3 p-6 text-center"><p>Sign in to get your code.</p><Button asChild className="h-11"><Link to="/login?redirect=/refer">Sign in</Link></Button></CardContent></Card>
@@ -51,7 +52,7 @@ const ReferFriend = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-center">
                                 <div className="rounded-xl bg-muted/50 p-3"><p className="text-2xl font-bold">{data.joined}</p><p className="text-xs text-muted-foreground">friends joined</p></div>
-                                <div className="rounded-xl bg-muted/50 p-3"><p className="text-2xl font-bold">{data.rewarded * data.points}</p><p className="text-xs text-muted-foreground">points earned</p></div>
+                                <div className="rounded-xl bg-muted/50 p-3"><p className="text-2xl font-bold">{pounds(data.rewarded * data.referrer)}</p><p className="text-xs text-muted-foreground">earned</p></div>
                             </div>
                         </CardContent>
                     </Card>

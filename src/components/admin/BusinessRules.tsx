@@ -119,20 +119,10 @@ export function BusinessRules() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Gift className="h-5 w-5 text-primary" />Refer a friend</CardTitle>
-                    <CardDescription>When someone joins with a friend's code and their first order is delivered, both get these points.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Gift className="h-5 w-5 text-primary" />Refer a friend and loyalty</CardTitle>
+                    <CardDescription>Rewards are now wallet credit in pounds, which you release. Set the amounts under Marketing, Wallets &amp; rewards.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <Label htmlFor="referral-on">Refer a friend is on</Label>
-                        <Switch id="referral-on" checked={refOn} onCheckedChange={setRefOn} />
-                    </div>
-                    <div className="grid gap-1 sm:max-w-xs">
-                        <Label htmlFor="referral-points">Points each</Label>
-                        <Input id="referral-points" type="number" min="0" value={refPoints} onChange={(e) => setRefPoints(e.target.value)} />
-                    </div>
-                </CardContent>
-                {saveButton('referral_config', { enabled: refOn, points: Number(refPoints) })}
+                <CardContent><Button asChild variant="outline"><a href="/admin/wallets?tab=rules">Open Wallets &amp; rewards</a></Button></CardContent>
             </Card>
         </div>
     );

@@ -23,7 +23,7 @@ const navLinks = [
   { label: 'Videos', href: '/videos' },
   { label: 'Events', href: '/events' },
   { label: 'Track Order', href: '/track-order' },
-  { label: 'Rewards', href: '/profile?tab=rewards' },
+  { label: 'Wallet', href: '/wallet' },
 ];
 
 export const Header = () => {

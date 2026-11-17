@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, Megaphone, CalendarDays, CalendarHeart, ChefHat, Clapperboard, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, MessagesSquare, Search, Settings, Star, Ticket, Users } from 'lucide-react';
+import { Activity, BarChart3, Megaphone, Wallet, CalendarDays, CalendarHeart, ChefHat, Clapperboard, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, MessagesSquare, Search, Settings, Star, Ticket, Users } from 'lucide-react';
 import SEO from '@/components/common/SEO';
 import { PortalShell } from '@/components/layout/PortalShell';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ const SECTIONS = [
     { group: 'Content', icon: MenuIcon, label: 'Menu', to: '/admin/menu' },
     { group: 'Content', icon: Clapperboard, label: 'Chef videos', to: '/admin/videos' },
     { group: 'Content', icon: Megaphone, label: 'Banners', to: '/admin/banners' },
+    { group: 'Marketing', icon: Wallet, label: 'Wallets & rewards', to: '/admin/wallets' },
     { group: 'Marketing', icon: Ticket, label: 'Discounts', to: '/admin/discounts' },
     { group: 'Marketing', icon: Search, label: 'SEO & tracking', to: '/admin/seo' },
     { group: 'Marketing', icon: MessagesSquare, label: 'Messages', to: '/admin/messages' },

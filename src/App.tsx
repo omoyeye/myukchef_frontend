@@ -63,6 +63,8 @@ const SupportInbox = lazy(() => import("./pages/admin/SupportInbox"));
 const SavedChefs = lazy(() => import("./pages/SavedChefs"));
 const Videos = lazy(() => import("./pages/Videos"));
 const GetApp = lazy(() => import("./pages/GetApp"));
+const WalletPage = lazy(() => import("./pages/Wallet"));
+const WalletsAdmin = lazy(() => import("./pages/admin/WalletsAdmin"));
 const VideoDetail = lazy(() => import("./pages/Videos").then((m) => ({ default: m.VideoDetail })));
 const VideoModeration = lazy(() => import("./pages/admin/VideoModeration"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
@@ -121,6 +123,7 @@ const App = () => (
               <Route path="/saved-chefs" element={<SavedChefs />} />
               <Route path="/videos" element={<Videos />} />
               <Route path="/app" element={<GetApp />} />
+              <Route path="/wallet" element={<WalletPage />} />
               <Route path="/videos/:id" element={<VideoDetail />} />
               <Route path="/my-bookings/:id" element={<MyBookingDetail />} />
               <Route path="/my-plans/:id" element={<MyPlanDetail />} />
@@ -167,6 +170,7 @@ const App = () => (
                 <Route path="system" element={<SystemHealth />} />
                 <Route path="banners" element={<BannerManagement />} />
                 <Route path="seo" element={<SeoSettings />} />
+                <Route path="wallets" element={<WalletsAdmin />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

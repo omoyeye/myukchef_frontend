@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import SEO from '@/components/common/SEO';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { pounds, useWallet, WalletNudge, WalletPanel } from '@/components/wallet/wallet';
 
 interface Address {
     id: number;
@@ -142,7 +143,7 @@ const Profile = () => {
             <Layout>
                 <div className="container py-20 text-center">
                     <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
-                    <p className="text-muted-foreground mb-8">Access your profile, points, and order history.</p>
+                    <p className="text-muted-foreground mb-8">Access your profile, wallet and order history.</p>
                     <Link to="/login?redirect=%2Fprofile"><Button>Log In / Sign Up</Button></Link>
                 </div>
             </Layout>
@@ -151,7 +152,7 @@ const Profile = () => {
 
     return (
         <CustomerPortal>
-            <SEO noindex title={`${user.name}'s Profile`} description="Manage your MYUKCHEF account, rewards, and order history." />
+            <SEO noindex title={`${user.name}'s Profile`} description="Manage your MYUKCHEF account, wallet, and order history." />
             <div>
                 <div className="max-w-3xl space-y-4 md:space-y-6">
 
@@ -164,10 +165,7 @@ const Profile = () => {
                             <h1 className="truncate text-xl md:text-2xl font-bold">{user.name}</h1>
                             <p className="truncate text-sm md:text-base text-muted-foreground">{user.email}</p>
                             <div className="flex flex-wrap items-center gap-1 md:gap-2 mt-1">
-                                <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
-                                    <Zap className="h-3 w-3 fill-primary mr-1" />
-                                    {user.points} Points
-                                </Badge>
+                                <ProfileWalletBadge />
                             </div>
                         </div>
                         <Button variant="ghost" size="icon" aria-label="Log out" className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive" onClick={logout}>
@@ -188,38 +186,7 @@ const Profile = () => {
                                 <ChevronRight className="h-5 w-5 shrink-0" />
                             </Link>
 
-                            {/* Loyalty Card */}
-                            <Card className="bg-gradient-to-r from-orange-600 to-red-600 text-white border-0 shadow-warm overflow-hidden relative group">
-                                <div className="absolute right-0 top-0 p-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
-                                <CardHeader className="pb-2">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="text-white/80 font-medium text-sm uppercase tracking-wider">Loyalty Points Balance</p>
-                                            <CardTitle className="text-5xl font-black mt-1 tracking-tighter italic">{user.points}</CardTitle>
-                                        </div>
-                                        <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center p-2 shadow-inner border border-white/30">
-                                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain brightness-0 invert" />
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <div className="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
-                                            <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((user.points / 500) * 100, 100)}%` }}></div>
-                                        </div>
-                                        <div className="flex justify-between gap-2 text-[10px] md:text-xs font-bold text-white/90 uppercase tracking-wider md:tracking-widest">
-                                            <span>Current Level</span>
-                                            <span>Next Perk: 500 Pts</span>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm font-medium text-white/95 leading-relaxed">
-                                        You're just <span className="underline decoration-2 underline-offset-2">{(500 - (user.points % 500)) % 500} points</span> away from your next £5 feast voucher!
-                                    </p>
-                                    <Button variant="secondary" className="w-full bg-white text-orange-700 hover:bg-orange-50 font-bold" onClick={() => handleTabChange('rewards')}>
-                                        View Rewards Vault
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <WalletNudge />
 
                             <AccountData />
 
@@ -334,83 +301,7 @@ const Profile = () => {
 
                         {/* REWARDS TAB */}
                         <TabsContent value="rewards" className="space-y-6 animate-fade-in">
-                            <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 flex flex-col items-center text-center space-y-3">
-                                <Gift className="h-10 w-10 text-primary" />
-                                <h3 className="text-xl font-black italic tracking-tight uppercase">Your Rewards Vault</h3>
-                                <p className="text-sm text-muted-foreground max-w-xs">
-                                    Exchange your hard-earned points for delicious perks and exclusive discounts.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-4">
-                                <Card className="overflow-hidden border-l-4 border-l-orange-500 group hover:shadow-md transition-shadow">
-                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
-                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
-                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                <Ticket className="h-8 w-8" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">£5 Feast Voucher</h4>
-                                                <p className="text-xs text-muted-foreground">Valid for any order over £20</p>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
-                                                    <span className="text-xs font-bold">500 Points</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Button className="h-11 shrink-0 md:h-9" variant={user.points >= 500 ? "default" : "outline"} disabled={user.points < 500}>
-                                            {user.points >= 500 ? "Redeem" : "Locked"}
-                                        </Button>
-                                    </div>
-                                </Card>
-
-                                <Card className="overflow-hidden border-l-4 border-l-red-500 group hover:shadow-md transition-shadow">
-                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
-                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
-                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                <Leaf className="h-8 w-8" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">Free Side Dish</h4>
-                                                <p className="text-xs text-muted-foreground">Enjoy a free side of Plantain or Puff Puff</p>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
-                                                    <span className="text-xs font-bold">350 Points</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Button className="h-11 shrink-0 md:h-9" variant={user.points >= 350 ? "default" : "outline"} disabled={user.points < 350}>
-                                            {user.points >= 350 ? "Redeem" : "Locked"}
-                                        </Button>
-                                    </div>
-                                </Card>
-
-                                <Card className="overflow-hidden border-l-4 border-l-yellow-600 group opacity-75 grayscale hover:grayscale-0 transition-all">
-                                    <div className="p-3 md:p-4 flex items-center justify-between gap-2">
-                                        <div className="flex min-w-0 items-center gap-3 md:gap-4">
-                                            <div className="h-12 w-12 shrink-0 md:h-14 md:w-14 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center p-2">
-                                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-bold text-base md:text-lg leading-tight uppercase italic">The Chef's Special</h4>
-                                                <p className="text-xs text-muted-foreground">Complimentary main course on us!</p>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
-                                                    <span className="text-xs font-bold">1500 Points</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Button className="h-11 shrink-0 md:h-9" variant="outline" disabled>
-                                            Locked
-                                        </Button>
-                                    </div>
-                                </Card>
-                            </div>
-
-                            <div className="p-6 text-center border-2 border-dashed rounded-2xl">
-                                <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">More Treats Coming Soon</h4>
-                                <p className="text-xs text-muted-foreground mt-1">Follow our social media for surprise drops!</p>
-                            </div>
+                            <WalletPanel />
                         </TabsContent>
 
                         {/* HISTORY TAB */}
@@ -518,3 +409,15 @@ const Profile = () => {
 };
 
 export default Profile;
+
+/** The wallet balance next to the person's name. */
+function ProfileWalletBadge() {
+    const { data } = useWallet();
+    if (!data) return null;
+    return (
+        <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
+            <Zap className="h-3 w-3 fill-primary mr-1" />
+            {pounds(data.available)} in wallet{data.pending > 0 ? ` · ${pounds(data.pending)} on its way` : ''}
+        </Badge>
+    );
+}
