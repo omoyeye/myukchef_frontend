@@ -1,3 +1,5 @@
+import { EventDishFields } from "@/components/plans/EventDishFields";
+import { EVENT_CATEGORIES } from "@/lib/eventMenu";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChefPlansPanel, ChefReviewsPanel } from "@/components/plans/ChefPlansPanel";
@@ -134,6 +136,8 @@ const ChefDashboard = () => {
         name: "", description: "", price: "", category: "mains", image: "",
         isVegetarian: false, isVegan: false, isGlutenFree: false, isHalal: false,
         allergens: [] as string[], allergensDeclared: false,
+        // Where it's offered, and how it's sold for events.
+        forMenu: true, forEvents: true, eventUnit: "portion", eventServes: "", eventPrice: "", eventMinQty: "",
     });
     const [uploading, setUploading] = useState(false);
 
@@ -154,10 +158,17 @@ const ChefDashboard = () => {
     };
 
     const createProduct = useMutation({
-        mutationFn: () => api.post("/chefs/me/products", { ...newProduct, price: Number(newProduct.price) }),
+        mutationFn: () => api.post("/chefs/me/products", {
+            ...newProduct,
+            // Event-only items take their price from the event price.
+            price: Number(newProduct.price || newProduct.eventPrice),
+            eventServes: newProduct.eventServes || null,
+            eventPrice: newProduct.forMenu ? newProduct.eventPrice || null : null,
+            eventMinQty: newProduct.eventMinQty || null,
+        }),
         onSuccess: () => {
             toast.success("Dish submitted for review!");
-            setNewProduct({ name: "", description: "", price: "", category: "mains", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, isHalal: false, allergens: [], allergensDeclared: false });
+            setNewProduct({ name: "", description: "", price: "", category: "mains", image: "", isVegetarian: false, isVegan: false, isGlutenFree: false, isHalal: false, allergens: [], allergensDeclared: false, forMenu: true, forEvents: true, eventUnit: "portion", eventServes: "", eventPrice: "", eventMinQty: "" });
             qc.invalidateQueries({ queryKey: ["chef-me-products"] });
         },
         onError: (e: any) => toast.error(e.message),
@@ -347,7 +358,7 @@ const ChefDashboard = () => {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2"><Label>Dish Name *</Label><Input value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} /></div>
-                                    <div className="space-y-2"><Label>Price (£) *</Label><Input type="number" inputMode="decimal" step="0.01" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} /></div>
+                                    {newProduct.forMenu && <div className="space-y-2"><Label>Price (£) *</Label><Input type="number" inputMode="decimal" step="0.01" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} /></div>}
                                     <div className="space-y-2 sm:col-span-2">
                                         <Label htmlFor="dish-notice">Extra notice for this dish (hours, optional)</Label>
                                         <Input id="dish-notice" type="number" min="0" max="168" className="sm:max-w-xs" placeholder={`Your usual ${chef.noticeHours ?? 1} hour(s)`} value={(newProduct as { noticeHours?: string }).noticeHours ?? ""} onChange={(e) => setNewProduct({ ...newProduct, noticeHours: e.target.value } as typeof newProduct)} />
@@ -357,13 +368,10 @@ const ChefDashboard = () => {
                                 <div className="space-y-2">
                                     <Label>Category</Label>
                                     <select className="w-full h-10 rounded-md border border-input bg-background px-3" value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}>
-                                        <option value="mains">Mains</option>
-                                        <option value="sides">Sides</option>
-                                        <option value="drinks">Drinks</option>
-                                        <option value="desserts">Desserts</option>
-                                        <option value="deals">Deals</option>
+                                        {EVENT_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                                     </select>
                                 </div>
+                                <EventDishFields value={newProduct} onChange={(patch) => setNewProduct({ ...newProduct, ...patch })} />
                                 <div className="space-y-2"><Label>Description *</Label><Textarea rows={3} value={newProduct.description} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} /></div>
                                 <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-4 gap-3">
                                     {[["isVegetarian", "Vegetarian"], ["isVegan", "Vegan"], ["isGlutenFree", "Gluten Free"], ["isHalal", "Halal"]].map(([k, label]) => (
@@ -374,7 +382,7 @@ const ChefDashboard = () => {
                                     ))}
                                 </div>
                                 <AllergenPicker idPrefix="new-dish" value={newProduct.allergens} confirmed={newProduct.allergensDeclared} onChange={(allergens) => setNewProduct({ ...newProduct, allergens })} onConfirmedChange={(allergensDeclared) => setNewProduct({ ...newProduct, allergensDeclared })} />
-                                <Button onClick={() => createProduct.mutate()} disabled={createProduct.isPending || !newProduct.name || !newProduct.image || !newProduct.price || !newProduct.allergensDeclared}>
+                                <Button onClick={() => createProduct.mutate()} disabled={createProduct.isPending || !newProduct.name || !newProduct.image || !(newProduct.forMenu ? newProduct.price : newProduct.eventPrice) || !newProduct.allergensDeclared}>
                                     <Plus className="h-4 w-4 mr-2" />{createProduct.isPending ? "Submitting..." : "Submit for Review"}
                                 </Button>
                             </CardContent>

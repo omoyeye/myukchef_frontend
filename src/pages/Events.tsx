@@ -1,3 +1,4 @@
+import { EVENT_CATEGORIES, startingQty, unitLabel, unitNote, type EventDish } from "@/lib/eventMenu";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -68,18 +69,15 @@ const Events = () => {
         try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* A saved draft is only a convenience. */ }
     }, [draft]);
 
-    const { data: menuProducts = [] } = useQuery<any[]>({ queryKey: ["products"], queryFn: () => api.get("/products") });
-    const { data: chefDishes = [] } = useQuery<any[]>({ queryKey: ["public-chef-products"], queryFn: () => api.get("/chefs/products/public") });
+    // Each chef's event menu: event-only items (trays, platters, extras) first, then their everyday dishes.
+    const { data: eventDishes = [] } = useQuery<EventDish[]>({ queryKey: ["event-menu"], queryFn: () => api.get("/events/menu") });
     const { data: chefs = [], isLoading } = useQuery<any[]>({ queryKey: ["public-chefs", location?.lat, location?.lng], queryFn: () => api.get(chefsPath(location)) });
 
     const dishesByChef = useMemo(() => {
-        const map = new Map<number, any[]>();
-        for (const dish of [...menuProducts, ...chefDishes]) {
-            if (!dish.chef?.id || dish.isSoldOut) continue;
-            map.set(dish.chef.id, [...(map.get(dish.chef.id) ?? []), dish]);
-        }
+        const map = new Map<number, EventDish[]>();
+        for (const dish of eventDishes) map.set(dish.chefId, [...(map.get(dish.chefId) ?? []), dish]);
         return map;
-    }, [menuProducts, chefDishes]);
+    }, [eventDishes]);
 
     const eventChefs = chefs.filter((c) => c.isAvailableForEvents);
     const term = search.trim().toLowerCase();
@@ -137,7 +135,7 @@ const Events = () => {
                         <li key={c.id}>
                             <p className="font-bold">{c.displayName}</p>
                             {chosenFor(c.id).length > 0
-                                ? <p className="text-muted-foreground">{chosenFor(c.id).map((d) => `${picks[d.id]} × ${d.name}`).join(", ")}</p>
+                                ? <p className="text-muted-foreground">{chosenFor(c.id).map((d) => `${picks[d.id]} ${d.unit === "portion" ? "×" : `${unitLabel(d.unit, picks[d.id])} of`} ${d.name}`).join(", ")}</p>
                                 : <p className="text-muted-foreground">Quoting from your notes</p>}
                         </li>
                     ))}
@@ -248,35 +246,52 @@ const Events = () => {
                                                         <span className="block truncate text-sm text-muted-foreground">{chef.specialty || "Home cooking"}</span>
                                                         <span className="flex flex-wrap items-center gap-x-2"><RatingPill rating={chef.rating} count={chef.reviewCount} />{chef.distanceMiles != null && <span className="text-sm text-muted-foreground">{formatMiles(chef.distanceMiles)}</span>}</span>
                                                     </span>
+                                                    {!isSelected && dishes.some((d) => d.eventOnly) && <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold">{dishes.filter((d) => d.eventOnly).length} event items</span>}
                                                     {isSelected && <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">{chosen.length ? `${chosen.length} dish${chosen.length === 1 ? "" : "es"}` : "Asked"}</span>}
                                                     <ChevronDown className={cn("h-5 w-5 shrink-0 transition-transform", isOpen && "rotate-180")} />
                                                 </button>
                                                 {isOpen && (
                                                     <div className="space-y-2 border-t p-3 md:p-4">
                                                         {dishes.length === 0 && <p className="p-2 text-sm text-muted-foreground">No set menu yet. Tell {chef.displayName.split(" ")[0]} what you'd like below.</p>}
-                                                        {dishes.map((dish) => {
-                                                            const portions = picks[dish.id] ?? 0;
-                                                            return (
-                                                                <div key={dish.id} className={cn("flex flex-wrap items-center gap-3 rounded-2xl p-2", portions > 0 && "bg-primary/5")}>
-                                                                    <img src={dish.image} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-                                                                    <div className="min-w-0 flex-1 basis-40">
-                                                                        <p className="break-words font-semibold leading-tight">{dish.name}</p>
-                                                                        <p className="text-sm text-muted-foreground">Menu price {money(dish.price)}</p>
+                                                        {[
+                                                            { title: "Event menu", note: "Made for parties and big days", list: dishes.filter((d) => d.eventOnly) },
+                                                            { title: dishes.some((d) => d.eventOnly) ? "Also from the everyday menu" : "Dishes", note: "Priced per portion", list: dishes.filter((d) => !d.eventOnly) },
+                                                        ].filter((g) => g.list.length > 0).map((group) => (
+                                                            <section key={group.title} className="space-y-1">
+                                                                <h3 className="flex items-baseline gap-2 px-2 pt-1 font-display text-base font-bold">{group.title}<span className="text-xs font-normal text-muted-foreground">{group.note}</span></h3>
+                                                                {EVENT_CATEGORIES.filter((c) => group.list.some((d) => d.category === c.id)).concat(group.list.some((d) => !EVENT_CATEGORIES.some((c) => c.id === d.category)) ? [{ id: "_other", label: "More" }] : []).map((cat) => (
+                                                                    <div key={cat.id} className="space-y-1">
+                                                                        <p className="px-2 pt-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{cat.label}</p>
+                                                                        {group.list.filter((d) => (cat.id === "_other" ? !EVENT_CATEGORIES.some((c) => c.id === d.category) : d.category === cat.id)).map((dish) => {
+                                                                            const qty = picks[dish.id] ?? 0;
+                                                                            const step = dish.unit === "portion" ? 10 : 1;
+                                                                            const startAt = startingQty(dish, form.headcount);
+                                                                            return (
+                                                                                <div key={dish.id} className={cn("flex flex-wrap items-center gap-3 rounded-2xl p-2", qty > 0 && "bg-primary/5")}>
+                                                                                    <img src={dish.image} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+                                                                                    <div className="min-w-0 flex-1 basis-40">
+                                                                                        <p className="break-words font-semibold leading-tight">{dish.name}</p>
+                                                                                        <p className="text-sm text-muted-foreground">{money(dish.price)} {unitNote(dish)}</p>
+                                                                                        {qty > 0 && dish.serves > 1 && <p className="text-xs font-medium text-primary">Feeds about {qty * dish.serves} of your {form.headcount} guests</p>}
+                                                                                    </div>
+                                                                                    {qty === 0 ? (
+                                                                                        <Button type="button" variant="outline" className="h-11 shrink-0" onClick={() => setPortions(dish.id, startAt)}><Plus className="mr-1.5 h-4 w-4" />Add {startAt} {unitLabel(dish.unit, startAt)}</Button>
+                                                                                    ) : (
+                                                                                        <div className="flex shrink-0 items-center gap-1">
+                                                                                            <Button type="button" size="icon" variant="outline" aria-label={`Fewer ${unitLabel(dish.unit, 2)} of ${dish.name}`} className="h-11 w-11 rounded-full" onClick={() => setPortions(dish.id, qty - step < dish.minQty ? 0 : qty - step)}><Minus className="h-4 w-4" /></Button>
+                                                                                            <Input aria-label={`${unitLabel(dish.unit, 2)} of ${dish.name}`} type="number" inputMode="numeric" min={0} className="h-11 w-20 text-center" value={qty} onChange={(e) => setPortions(dish.id, Number(e.target.value))} onBlur={() => qty > 0 && qty < dish.minQty && setPortions(dish.id, dish.minQty)} />
+                                                                                            <Button type="button" size="icon" variant="outline" aria-label={`More ${unitLabel(dish.unit, 2)} of ${dish.name}`} className="h-11 w-11 rounded-full" onClick={() => setPortions(dish.id, qty + step)}><Plus className="h-4 w-4" /></Button>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
                                                                     </div>
-                                                                    {portions === 0 ? (
-                                                                        <Button type="button" variant="outline" className="h-11 shrink-0" onClick={() => setPortions(dish.id, form.headcount || 1)}><Plus className="mr-1.5 h-4 w-4" />Add for {form.headcount || 1}</Button>
-                                                                    ) : (
-                                                                        <div className="flex shrink-0 items-center gap-1">
-                                                                            <Button type="button" size="icon" variant="outline" aria-label={`Fewer portions of ${dish.name}`} className="h-11 w-11 rounded-full" onClick={() => setPortions(dish.id, portions - 10)}><Minus className="h-4 w-4" /></Button>
-                                                                            <Input aria-label={`Portions of ${dish.name}`} type="number" inputMode="numeric" min={0} className="h-11 w-20 text-center" value={portions} onChange={(e) => setPortions(dish.id, Number(e.target.value))} />
-                                                                            <Button type="button" size="icon" variant="outline" aria-label={`More portions of ${dish.name}`} className="h-11 w-11 rounded-full" onClick={() => setPortions(dish.id, portions + 10)}><Plus className="h-4 w-4" /></Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                ))}
+                                                            </section>
+                                                        ))}
                                                         <div className="space-y-2 pt-2">
-                                                            <Label htmlFor={`prefs-${chef.id}`}>Your preferences for {chef.displayName.split(" ")[0]}</Label>
+                                                            <Label htmlFor={`prefs-${chef.id}`}>{dishes.length ? `Anything else for ${chef.displayName.split(" ")[0]}? (optional)` : `Your preferences for ${chef.displayName.split(" ")[0]}`}</Label>
                                                             <Textarea
                                                                 id={`prefs-${chef.id}`}
                                                                 rows={2}

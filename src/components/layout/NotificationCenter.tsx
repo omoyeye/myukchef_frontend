@@ -51,6 +51,24 @@ export const NotificationCenter = () => {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
     });
 
+    // Deleting: one at a time, or clearing every read (or every) notification.
+    const removeMutation = useMutation({
+        mutationFn: (id: number) => api.delete(`/notifications/${id}`),
+        onMutate: async (id: number) => {
+            await queryClient.cancelQueries({ queryKey: ['notifications'] });
+            const before = queryClient.getQueryData<Notification[]>(['notifications']);
+            queryClient.setQueryData<Notification[]>(['notifications'], (list = []) => list.filter((n) => n.id !== id));
+            return { before };
+        },
+        onError: (_e, _id, ctx) => { if (ctx?.before) queryClient.setQueryData(['notifications'], ctx.before); },
+        onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    });
+    const clearMutation = useMutation({
+        mutationFn: (onlyRead: boolean) => api.delete(`/notifications${onlyRead ? '?only=read' : ''}`),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    });
+    const readCount = notifications.filter((n) => n.isRead).length;
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'order_placed':
@@ -86,16 +104,32 @@ export const NotificationCenter = () => {
                         <h3 className="font-black italic uppercase tracking-tight text-lg">Alerts</h3>
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{unreadCount} Unread</p>
                     </div>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[10px] font-bold uppercase tracking-widest h-7 hover:bg-white"
-                            onClick={() => markAllAsReadMutation.mutate()}
-                        >
-                            Mark all read
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {unreadCount > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] font-bold uppercase tracking-widest h-7 hover:bg-white"
+                                onClick={() => markAllAsReadMutation.mutate()}
+                            >
+                                Mark all read
+                            </Button>
+                        )}
+                        {notifications.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] font-bold uppercase tracking-widest h-7 hover:bg-white"
+                                disabled={clearMutation.isPending}
+                                onClick={() => {
+                                    if (readCount > 0) clearMutation.mutate(true);
+                                    else if (window.confirm('Delete all your notifications?')) clearMutation.mutate(false);
+                                }}
+                            >
+                                <Trash2 className="mr-1 h-3 w-3" />{readCount > 0 ? 'Clear read' : 'Clear all'}
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <DropdownMenuSeparator className="m-0" />
                 <div className="max-h-[400px] overflow-y-auto">
@@ -143,6 +177,13 @@ export const NotificationCenter = () => {
                                                 Mark Read
                                             </button>
                                         )}
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMutation.mutate(notification.id); }}
+                                            aria-label={`Delete notification: ${notification.title}`}
+                                            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>

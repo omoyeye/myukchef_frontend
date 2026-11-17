@@ -35,21 +35,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Initial load - verify user session
     useEffect(() => {
         if (session.token) {
-            // Verify session with backend
-            api.get('/auth/me')
-                .then(data => {
-                    const userData = {
-                        ...data.user,
-                        isAdmin: data.user.role === 'admin'
-                    };
-                    setUser(userData);
-                })
-                .catch(err => {
-                    console.error("Session verification failed", err);
-                    session.clear();
-                    setUser(null);
-                })
-                .finally(() => setIsLoading(false));
+            // Verify the session with the server. Only a real "not signed in" answer signs the person
+            // out; if the server can't be reached for a moment, keep the session and try again.
+            let cancelled = false;
+            const verify = (attempt: number) => {
+                api.get('/auth/me')
+                    .then(data => {
+                        if (cancelled) return;
+                        setUser({ ...data.user, isAdmin: data.user.role === 'admin' });
+                        setIsLoading(false);
+                    })
+                    .catch((err: Error & { status?: number }) => {
+                        if (cancelled) return;
+                        if (err.status === 401 || err.status === 403) {
+                            session.clear();
+                            setUser(null);
+                            setIsLoading(false);
+                            return;
+                        }
+                        console.warn("Couldn't check your session yet, trying again", err.message);
+                        if (attempt < 6) setTimeout(() => verify(attempt + 1), Math.min(1000 * 2 ** attempt, 15000));
+                        else setIsLoading(false);
+                    });
+            };
+            verify(0);
+            return () => { cancelled = true; };
         } else {
             setIsLoading(false);
         }

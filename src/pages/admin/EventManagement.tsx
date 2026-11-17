@@ -174,7 +174,7 @@ const EventManagement = () => {
                                             {detail.quotes.map((q: any) => (
                                                 <TableRow key={q.id}>
                                                     <TableCell className="font-medium">{q.chef.displayName}{q.preferences && <div className="max-w-48 text-xs font-normal text-muted-foreground">{q.preferences}</div>}</TableCell>
-                                                    <TableCell className="min-w-40 text-xs">{(q.items ?? []).map((i: any) => `${i.quantity} × ${i.name}${i.unitPrice != null ? ` @ ${money(i.unitPrice)}` : ""}`).join(", ") || "From notes"}{q.serviceFee > 0 && <div>+ {money(q.serviceFee)} service</div>}</TableCell>
+                                                    <TableCell className="min-w-40 text-xs">{(q.items ?? []).map((i: any) => `${i.quantity} ${i.unit && i.unit !== "portion" ? `${i.unit}s of` : "×"} ${i.name}${i.unitPrice != null ? ` @ ${money(i.unitPrice)}` : ""}`).join(", ") || "From notes"}{q.serviceFee > 0 && <div>+ {money(q.serviceFee)} service</div>}</TableCell>
                                                     <TableCell>{q.total != null ? money(q.total) : "-"}</TableCell>
                                                     <TableCell><Pill s={QUOTE_STATUS[q.status]} /></TableCell>
                                                     <TableCell className="min-w-28 text-xs">{q.willAttend ? ATTENDANCE_LABEL[q.willAttend] : "-"}</TableCell>

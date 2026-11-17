@@ -241,6 +241,18 @@ const AdminSettings = () => {
                                 </div>
                             </div>
 
+                            <div className="grid gap-4 pt-4 border-t sm:grid-cols-2">
+                                <p className="text-sm text-muted-foreground sm:col-span-2">App store links for the footer. Leave blank until the app is live; the buttons then say "Coming soon" and open the Get the App page.</p>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="google-play">Google Play link</Label>
+                                    <Input id="google-play" placeholder="https://play.google.com/store/apps/details?id=..." value={footerInfo.apps?.googlePlay || ""} onChange={(e) => setFooterInfo({ ...footerInfo, apps: { ...footerInfo.apps, googlePlay: e.target.value } })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="app-store">App Store link</Label>
+                                    <Input id="app-store" placeholder="https://apps.apple.com/app/..." value={footerInfo.apps?.appStore || ""} onChange={(e) => setFooterInfo({ ...footerInfo, apps: { ...footerInfo.apps, appStore: e.target.value } })} />
+                                </div>
+                            </div>
+
                             <div className="space-y-4 pt-4 border-t">
                                 <Label>Opening Hours (Footer display)</Label>
                                 <div className="grid gap-2">

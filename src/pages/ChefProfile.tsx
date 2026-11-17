@@ -1,3 +1,4 @@
+import { categoryLabel, unitNote, type EventDish } from "@/lib/eventMenu";
 import { waitLabel } from "@/lib/area";
 import { useState } from "react";
 import { BestReview, ChefGallery } from "@/components/chefs/ChefHighlights";
@@ -41,6 +42,13 @@ const ChefProfile = () => {
         queryFn: () => api.get(`/chefs/${id}/products`),
         enabled: !!chef,
     });
+    // Party trays, platters and extras this chef offers for events (shown under Dishes).
+    const { data: eventItems = [] } = useQuery<EventDish[]>({
+        queryKey: ["event-menu", id],
+        queryFn: () => api.get(`/events/menu?chef=${id}`),
+        enabled: !!chef?.isAvailableForEvents,
+    });
+    const eventOnly = eventItems.filter((d) => d.eventOnly);
 
     const favourite = useMutation({
         mutationFn: (on: boolean) => (on ? api.put(`/chefs/${id}/favourite`, {}) : api.delete(`/chefs/${id}/favourite`)),
@@ -210,6 +218,30 @@ const ChefProfile = () => {
                         <TabsTrigger value="about" className="h-9 px-4">About</TabsTrigger>
                     </TabsList>
                     <TabsContent value="dishes" className="mt-5">
+                        {eventOnly.length > 0 && (
+                            <section className="mb-8 rounded-3xl border bg-secondary/40 p-5">
+                                <div className="flex flex-wrap items-end justify-between gap-3">
+                                    <div>
+                                        <h2 className="flex items-center gap-2 font-display text-2xl font-extrabold"><CalendarHeart className="h-6 w-6 text-primary" />Event menu</h2>
+                                        <p className="text-sm text-muted-foreground">For parties, weddings and big days. Prices are a guide; {chef.displayName.split(" ")[0]} sends a quote for your event.</p>
+                                    </div>
+                                    <Button asChild className="rounded-full"><Link to={`/events?chef=${chef.id}`}>Get a quote</Link></Button>
+                                </div>
+                                <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {eventOnly.map((d) => (
+                                        <li key={d.id} className="flex gap-3 rounded-2xl bg-card p-3">
+                                            <img src={d.image} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+                                            <div className="min-w-0">
+                                                <p className="break-words font-semibold leading-tight">{d.name}</p>
+                                                <p className="text-xs text-muted-foreground">{categoryLabel(d.category)}</p>
+                                                <p className="mt-1 text-sm font-bold">£{d.price.toFixed(2)} <span className="font-normal text-muted-foreground">{unitNote(d)}</span></p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
+                        {dishes.length > 0 && eventOnly.length > 0 && <h2 className="mb-4 font-display text-2xl font-extrabold">Everyday menu</h2>}
                         {dishes.length > 0 ? (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {dishes.map((dish) => <MenuCard key={dish.id} item={{ ...dish, modifiers: dish.modifiers ?? [], chef: { id: chef.id, displayName: chef.displayName, avatar: chef.avatar } }} />)}

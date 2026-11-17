@@ -5,6 +5,7 @@ import { Instagram, Twitter, Facebook, MapPin, Phone, Mail, Clock } from 'lucide
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { FooterApp } from './FooterApp';
 
 export const Footer = () => {
   const { data: settings = {} } = useQuery({
@@ -124,22 +125,24 @@ export const Footer = () => {
                 <a href={`mailto:${storeInfo.email || "info@myukchef.com"}`} className="hover:text-primary">{storeInfo.email || "info@myukchef.com"}</a>
               </li>
             </ul>
+            {/* Opening hours, under contact details */}
+            {footerInfo.hours?.some((line: string) => line) && (
+              <div className="space-y-4 pt-4">
+                <h4 className="font-semibold text-foreground">Opening Hours</h4>
+                <ul className="space-y-2">
+                  {footerInfo.hours.filter(Boolean).map((line: string, idx: number) => (
+                    <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 flex-shrink-0" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          {/* Hours */}
-          {footerInfo.hours?.some((line: string) => line) && (
-            <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">Opening Hours</h4>
-              <ul className="space-y-2">
-                {footerInfo.hours.filter(Boolean).map((line: string, idx: number) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 flex-shrink-0" />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* App */}
+          <FooterApp googlePlay={footerInfo.apps?.googlePlay} appStore={footerInfo.apps?.appStore} />
         </div>
 
         <div className="mt-10 border-t border-border pt-6">
@@ -169,6 +172,12 @@ export const Footer = () => {
               </button>
             </div>
           </div>
+          <p className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+            Designed and developed by{' '}
+            <a href="https://www.surpluslink.co.uk" target="_blank" rel="noopener" className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline">
+              Surpluslink &amp; Co Ltd
+            </a>
+          </p>
         </div>
       </div>
     </footer>

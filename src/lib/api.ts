@@ -82,7 +82,7 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            throw new Error(error.error || `GET ${path} failed with status ${response.status}`);
+            throw Object.assign(new Error(error.error || `GET ${path} failed with status ${response.status}`), { status: response.status });
         }
         return response.json();
     },
@@ -95,7 +95,7 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            throw new Error(error.error || `POST ${path} failed with status ${response.status}`);
+            throw Object.assign(new Error(error.error || `POST ${path} failed with status ${response.status}`), { status: response.status });
         }
         return response.json();
     },
@@ -108,7 +108,7 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            throw new Error(error.error || `PATCH ${path} failed with status ${response.status}`);
+            throw Object.assign(new Error(error.error || `PATCH ${path} failed with status ${response.status}`), { status: response.status });
         }
         return response.json();
     },
@@ -121,7 +121,7 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            throw new Error(error.error || `PUT ${path} failed with status ${response.status}`);
+            throw Object.assign(new Error(error.error || `PUT ${path} failed with status ${response.status}`), { status: response.status });
         }
         return response.json();
     },
@@ -134,7 +134,7 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            throw new Error(error.error || `DELETE ${path} failed with status ${response.status}`);
+            throw Object.assign(new Error(error.error || `DELETE ${path} failed with status ${response.status}`), { status: response.status });
         }
         return response.json();
     }

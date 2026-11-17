@@ -15,6 +15,7 @@ export const QUOTE_STATUS: Record<string, { label: string; className: string }> 
     declined: { label: "Declined", className: "bg-muted text-muted-foreground" },
     accepted: { label: "Chosen", className: "bg-emerald-100 text-emerald-900" },
     not_selected: { label: "Not selected", className: "bg-muted text-muted-foreground" },
+    withdrawn: { label: "Removed by customer", className: "bg-muted text-muted-foreground" },
 };
 
 export const ATTENDANCE_LABEL: Record<string, string> = {

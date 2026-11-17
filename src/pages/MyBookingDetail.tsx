@@ -1,3 +1,4 @@
+import { unitLabel } from "@/lib/eventMenu";
 import { peopleLabel } from "@/lib/area";
 import { useEffect, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
@@ -74,11 +75,25 @@ const MyBookingDetail = () => {
         onSuccess: () => { toast.success("Thanks. We'll confirm as soon as your payment arrives."); refresh(); },
         onError: fail,
     });
+    // Cancelling: the whole booking, or just the chefs the customer no longer needs.
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [cancelIds, setCancelIds] = useState<number[]>([]);
+    const [cancelReason, setCancelReason] = useState("");
     const cancel = useMutation({
-        mutationFn: () => api.patch(`/events/${id}/cancel`, {}),
-        onSuccess: () => { toast.success("Booking cancelled"); refresh(); },
-        onError: fail,
+        mutationFn: async ({ ids, all }: { ids: number[]; all: boolean }) => {
+            if (all) return api.patch(`/events/${id}/cancel`, {});
+            let last: { cancelledAll?: boolean } | null = null;
+            for (const quoteId of ids) last = await api.patch(`/events/${id}/quotes/${quoteId}/cancel`, { reason: cancelReason });
+            return last;
+        },
+        onSuccess: (r: { cancelledAll?: boolean } | null, v) => {
+            const whole = v.all || r?.cancelledAll;
+            toast.success(whole ? "Booking cancelled" : `${v.ids.length === 1 ? "That chef has" : "Those chefs have"} been told. The rest of your booking carries on.`);
+            setCancelOpen(false); setCancelIds([]); setCancelReason(""); refresh();
+        },
+        onError: (e: Error) => { fail(e); refresh(); },
     });
+    const openCancel = (quoteId?: number) => { setCancelIds(quoteId ? [quoteId] : []); setCancelReason(""); setCancelOpen(true); };
 
     if (authLoading || isLoading) return <Layout><PageLoader /></Layout>;
     if (isError || !booking) {
@@ -101,6 +116,9 @@ const MyBookingDetail = () => {
     const selectionTotal = submitted.filter((q) => selection.includes(q.id)).reduce((sum, q) => sum + (q.total ?? 0), 0);
     const toggle = (quoteId: number) => setChosen(selection.includes(quoteId) ? selection.filter((x) => x !== quoteId) : [...selection, quoteId]);
     const canCancel = !["confirmed", "in_progress", "completed", "cancelled"].includes(booking.status) && booking.paymentStatus !== "paid";
+    // Chefs still part of the booking, any of whom the customer can let go.
+    const activeQuotes = quotes.filter((q) => ["requested", "submitted", "accepted"].includes(q.status));
+    const cancellingAll = activeQuotes.length > 0 && activeQuotes.every((q) => cancelIds.includes(q.id));
     const status = BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoting;
     const visibleQuotes = deciding ? quotes : quotes.filter((q) => q.status === "accepted");
     const chatQuote = quotes.find((q) => q.id === chat);
@@ -196,7 +214,7 @@ const MyBookingDetail = () => {
                                         <ul className="mx-4 space-y-1.5 border-t py-3 text-sm md:mx-5">
                                             {lines.map((line: any) => (
                                                 <li key={line.id} className="flex justify-between gap-3">
-                                                    <span className="min-w-0 break-words">{line.quantity} × {line.name}{line.allergens && <span className="block text-xs text-muted-foreground">{allergenSummary(line.allergens)}</span>}</span>
+                                                    <span className="min-w-0 break-words">{line.quantity} {line.unit && line.unit !== "portion" ? `${unitLabel(line.unit, line.quantity)} of` : "×"} {line.name}{line.allergens && <span className="block text-xs text-muted-foreground">{allergenSummary(line.allergens)}</span>}</span>
                                                     {line.unitPrice != null && <span className="shrink-0 font-semibold">{money(line.unitPrice * line.quantity)}</span>}
                                                 </li>
                                             ))}
@@ -220,6 +238,9 @@ const MyBookingDetail = () => {
                                                 <Button variant="outline" className="h-11 px-3" onClick={() => setRating(quote.chef)}><Star className="mr-1.5 h-4 w-4" />Rate {quote.chef.displayName.split(" ")[0]}</Button>
                                             )}
                                         </div>
+                                        {canCancel && activeQuotes.length > 1 && activeQuotes.some((q) => q.id === quote.id) && (
+                                            <Button variant="ghost" className="h-11 px-3 text-destructive hover:text-destructive" onClick={() => openCancel(quote.id)}><XCircle className="mr-1.5 h-4 w-4" />Remove {quote.chef.displayName.split(" ")[0]}</Button>
+                                        )}
                                         {deciding && quote.status === "submitted" && (
                                             <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 text-sm font-semibold">
                                                 <Checkbox checked={isChosen} onCheckedChange={() => toggle(quote.id)} aria-label={`Include ${quote.chef.displayName}'s quote`} />
@@ -234,10 +255,43 @@ const MyBookingDetail = () => {
                 </section>
 
                 {canCancel && (
-                    <Button variant="ghost" className="mt-5 h-11 text-destructive hover:text-destructive" disabled={cancel.isPending} onClick={() => { if (window.confirm("Cancel this booking? Your chefs will be told, and nothing is owed.")) cancel.mutate(); }}>
-                        <XCircle className="mr-2 h-4 w-4" />Cancel booking
+                    <Button variant="ghost" className="mt-5 h-11 text-destructive hover:text-destructive" disabled={cancel.isPending} onClick={() => openCancel()}>
+                        <XCircle className="mr-2 h-4 w-4" />{activeQuotes.length > 1 ? "Cancel a chef or the booking" : "Cancel booking"}
                     </Button>
                 )}
+                <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>What would you like to cancel?</DialogTitle>
+                            <DialogDescription>Choose the chefs you no longer need. They'll be told, and nothing is owed. The rest of your booking carries on.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2">
+                            {activeQuotes.map((q) => (
+                                <label key={q.id} className={cn("flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border p-3", cancelIds.includes(q.id) && "border-destructive bg-destructive/5")}>
+                                    <Checkbox checked={cancelIds.includes(q.id)} onCheckedChange={(v) => setCancelIds(v ? [...cancelIds, q.id] : cancelIds.filter((x) => x !== q.id))} aria-label={`Cancel ${q.chef.displayName}`} />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block font-semibold">{q.chef.displayName}</span>
+                                        <span className="block text-xs text-muted-foreground">{(q.items ?? []).map((i: any) => `${i.quantity} × ${i.name}`).join(", ") || "From your notes"}{q.total != null ? ` · ${money(q.total)}` : ""}</span>
+                                    </span>
+                                </label>
+                            ))}
+                            {activeQuotes.length > 1 && (
+                                <Button type="button" variant="link" className="h-auto p-0 text-sm" onClick={() => setCancelIds(cancellingAll ? [] : activeQuotes.map((q) => q.id))}>{cancellingAll ? "Clear" : "Select all (cancel the whole booking)"}</Button>
+                            )}
+                            {cancelIds.length > 0 && !cancellingAll && (
+                                <textarea className="min-h-20 w-full rounded-xl border bg-background p-3 text-sm" maxLength={300} placeholder="Tell them why (optional), e.g. our numbers changed" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} aria-label="Reason (optional)" />
+                            )}
+                            {cancellingAll && <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">This cancels the whole booking.</p>}
+                            {!cancellingAll && cancelIds.length > 0 && booking.status === "awaiting_payment" && <p className="text-sm text-muted-foreground">Your total will be updated before you pay.</p>}
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setCancelOpen(false)}>Keep everything</Button>
+                            <Button variant="destructive" disabled={cancelIds.length === 0 || cancel.isPending} onClick={() => cancel.mutate({ ids: cancelIds, all: cancellingAll })}>
+                                {cancel.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{cancelIds.length === 0 ? "Choose who to cancel" : cancellingAll ? "Cancel the booking" : `Cancel ${cancelIds.length === 1 ? "this chef" : `${cancelIds.length} chefs`}`}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground"><Lock className="mt-0.5 h-4 w-4 shrink-0" />To keep everyone safe, all contact happens here. Phone numbers, emails and links can't be shared with chefs.</p>
             </div>
 

@@ -1,3 +1,4 @@
+import { unitLabel } from "@/lib/eventMenu";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -72,7 +73,7 @@ const QuoteForm = ({ quote, commissionPercent, onClose }: { quote: any | null; c
                             <ul className="space-y-2">
                                 {items.map((item: any) => (
                                     <li key={item.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-secondary/60 p-3">
-                                        <div className="min-w-0 flex-1 basis-36"><p className="break-words font-semibold leading-tight">{item.name}</p><p className="text-sm text-muted-foreground">{item.quantity} portions</p><p className="text-xs text-muted-foreground">{allergenSummary(item.allergens)}</p></div>
+                                        <div className="min-w-0 flex-1 basis-36"><p className="break-words font-semibold leading-tight">{item.name}</p><p className="text-sm text-muted-foreground">{item.quantity} {unitLabel(item.unit, item.quantity)}{item.serves > 1 ? ` (each serves ${item.serves})` : ""} · price per {unitLabel(item.unit)}</p><p className="text-xs text-muted-foreground">{allergenSummary(item.allergens)}</p></div>
                                         <div className="w-24 shrink-0"><Label htmlFor={`price-${item.id}`} className="sr-only">Price per portion of {item.name}</Label><Input id={`price-${item.id}`} type="number" inputMode="decimal" min={0} step="0.01" required className="h-11" value={prices[item.id] ?? ""} onChange={(e) => setPrices({ ...prices, [item.id]: e.target.value })} /></div>
                                         <span className="w-20 shrink-0 text-right text-sm font-bold">{money((Number(prices[item.id]) || 0) * item.quantity)}</span>
                                     </li>
@@ -151,7 +152,7 @@ export const ChefQuotes = () => {
                     </div>
                     <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
                 </div>
-                {q.items?.length > 0 && <p className="text-sm"><span className="font-semibold">Asked for:</span> {q.items.map((i: any) => `${i.quantity} × ${i.name}`).join(", ")}</p>}
+                {q.items?.length > 0 && <p className="text-sm"><span className="font-semibold">Asked for:</span> {q.items.map((i: any) => `${i.quantity} ${i.unit && i.unit !== "portion" ? `${unitLabel(i.unit, i.quantity)} of` : "×"} ${i.name}`).join(", ")}</p>}
                 {q.preferences && <p className="rounded-xl bg-secondary p-2.5 text-sm"><span className="font-semibold">Preferences:</span> {q.preferences}</p>}
                 {q.event.specialRequests && <p className="text-sm text-muted-foreground"><span className="font-semibold">For all chefs:</span> {q.event.specialRequests}</p>}
                 {q.total != null && q.status !== "declined" && <p className="text-sm"><span className="font-semibold">Your quote:</span> {money(q.total)}{q.willAttend ? ` · ${ATTENDANCE_LABEL[q.willAttend]}` : ""}</p>}
