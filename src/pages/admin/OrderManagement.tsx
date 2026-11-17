@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, BellRing, ChefHat, Clock, CreditCard, Eye, Loader2, PackageCheck, RefreshCw, Truck, Wallet, XCircle } from 'lucide-react';
+import { BadgeCheck, BellRing, ChefHat, Clock, CreditCard, Eye, KeyRound, Loader2, PackageCheck, RefreshCw, Truck, Wallet, XCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,6 +39,9 @@ interface AdminOrder {
     deliveryAddress?: { firstName?: string; lastName?: string; method?: string } | null;
     items: { id: number; quantity: number; product?: { name: string } | null }[];
     chefProgress?: ChefStage[];
+    /** The customer's delivery code, if this order needs one, and why it was skipped (if it was). */
+    deliveryCode?: string | null;
+    deliveryCodeWaived?: string | null;
 }
 const money = (n: number) => `£${Number(n).toFixed(2)}`;
 const Pill = ({ status }: { status: string }) => {
@@ -87,6 +91,14 @@ const LiveOrders = () => {
     const setStatus = useMutation({
         mutationFn: ({ id, status }: { id: number; status: string }) => api.patch(`/orders/${id}/status`, { status }),
         onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-orders'] }); toast.success('Order updated. The customer and chefs have been told.'); },
+        onError: (e: Error) => toast.error(e.message),
+    });
+    // Lets a chef finish an order without the customer's code, e.g. after five wrong tries. The reason is kept.
+    const [skipping, setSkipping] = useState<AdminOrder | null>(null);
+    const [skipReason, setSkipReason] = useState('');
+    const skipCode = useMutation({
+        mutationFn: ({ id, reason }: { id: number; reason: string }) => api.post(`/orders/${id}/delivery-code/waive`, { reason }),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-orders'] }); toast.success('Done. The chef can now finish the order without the code.'); setSkipping(null); setSkipReason(''); },
         onError: (e: Error) => toast.error(e.message),
     });
     const remove = useMutation({
@@ -165,6 +177,16 @@ const LiveOrders = () => {
                                             ))}
                                         </ul>
                                     )}
+                                    {order.deliveryCode && !['cancelled'].includes(order.status) && (
+                                        <div className="flex items-center justify-between gap-2 rounded-lg bg-secondary/60 px-2 py-1.5 text-xs">
+                                            <span className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5 text-primary" />
+                                                {order.deliveryCodeWaived ? <span title={order.deliveryCodeWaived}>Code skipped</span> : <>Delivery code <span className="font-mono font-bold">{order.deliveryCode}</span></>}
+                                            </span>
+                                            {!order.deliveryCodeWaived && order.status !== 'completed' && (
+                                                <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setSkipping(order)}>Skip code</button>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="flex justify-between border-t pt-2 font-bold">
                                         <span>Total</span>
                                         <span className="flex items-center gap-2">
@@ -193,6 +215,19 @@ const LiveOrders = () => {
                     );
                 })}
             </div>
+            <Dialog open={!!skipping} onOpenChange={(o) => { if (!o) { setSkipping(null); setSkipReason(''); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Skip the delivery code for order #{skipping?.id}?</DialogTitle>
+                        <DialogDescription>The chef can then mark it delivered without the customer's code. Do this only once you've checked with the customer (for example, after five wrong tries). Your reason is kept on the order.</DialogDescription>
+                    </DialogHeader>
+                    <Input value={skipReason} onChange={(e) => setSkipReason(e.target.value)} maxLength={300} placeholder="e.g. Phoned the customer, who confirmed the delivery" aria-label="Reason" />
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setSkipping(null)}>Keep the code</Button>
+                        <Button disabled={!skipReason.trim() || skipCode.isPending} onClick={() => skipping && skipCode.mutate({ id: skipping.id, reason: skipReason })}>Skip the code</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

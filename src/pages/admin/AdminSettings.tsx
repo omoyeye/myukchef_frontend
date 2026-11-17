@@ -92,7 +92,7 @@ const AdminSettings = () => {
             </div>
 
             <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") ?? "general"} className="space-y-4">
-                <TabsList>
+                <TabsList className="flex h-auto w-full justify-start overflow-x-auto">
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="operations">Operations</TabsTrigger>
                     <TabsTrigger value="delivery">Delivery</TabsTrigger>

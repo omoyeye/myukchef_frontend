@@ -112,6 +112,23 @@ const OrderTracker = () => {
                         returnedCancelled={searchParams.get('payment') === 'cancelled'}
                     />
 
+                    {/* The delivery code: given to whoever hands the food over (like Uber Eats). Only the customer sees it. */}
+                    {order.deliveryCode && (
+                        <Card className="mb-6 overflow-hidden border-2 border-primary shadow-warm">
+                            <div className="flex flex-col items-center gap-2 bg-primary/5 p-5 text-center sm:flex-row sm:justify-between sm:text-left">
+                                <div>
+                                    <p className="text-sm font-bold uppercase tracking-wider text-primary">Your delivery code</p>
+                                    <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                                        {(order.deliveryAddress as { method?: string } | null)?.method === 'pickup'
+                                            ? 'Give this code to the chef when you collect your order. Don\'t share it before then.'
+                                            : 'Give this code to the person who delivers your food, when they arrive. Don\'t share it before then.'}
+                                    </p>
+                                </div>
+                                <p className="font-mono text-5xl font-black tracking-[0.3em] text-foreground" aria-label={`Delivery code ${String(order.deliveryCode).split('').join(' ')}`}>{order.deliveryCode}</p>
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Live map: the customer's destination plus the courier while out for delivery */}
                     {!['completed', 'cancelled', 'awaiting_payment'].includes(order.status) && order.destination && (
                         <Card className="overflow-hidden mb-6 border-0 shadow-warm">
@@ -128,7 +145,10 @@ const OrderTracker = () => {
                                         {order.courier ? 'Your delivery is on the way' : order.status === 'delivery' ? 'Out for delivery' : 'Being prepared'}
                                     </p>
                                     {order.courier && (
-                                        <p className="text-xl font-bold text-primary">{formatMiles(milesApart(order.courier, order.destination))}</p>
+                                        <p className="text-xl font-bold text-primary">
+                                            {order.etaMinutes ? `About ${order.etaMinutes} min away` : formatMiles(milesApart(order.courier, order.destination))}
+                                            {order.etaMinutes ? <span className="ml-2 text-sm font-medium text-muted-foreground">{formatMiles(milesApart(order.courier, order.destination))}</span> : null}
+                                        </p>
                                     )}
                                 </div>
                                 {order.courier && (

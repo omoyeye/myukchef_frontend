@@ -2,7 +2,8 @@ import { useState } from "react";
 import { OrderChat } from "@/components/orders/OrderChat";
 import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Camera, Check, ChefHat, Loader2, MapPin, PackageCheck, Truck, UtensilsCrossed, Wallet } from "lucide-react";
+import { BadgeCheck, Camera, Check, ChefHat, KeyRound, Loader2, MapPin, Navigation, PackageCheck, Truck, UtensilsCrossed, Wallet } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +45,12 @@ interface ChefOrder {
     method: "delivery" | "pickup";
     customerName: string | null;
     deliveryAddress: { line1?: string; city?: string; postcode?: string; notes?: string } | null;
+    /** Where to take it, and how far from your kitchen (for a collection: how far the customer is coming). */
+    destination: { lat: number; lng: number } | null;
+    distanceMiles: number | null;
+    /** The customer's 4-digit code is needed to finish; you get it from them at the door. */
+    codeRequired: boolean;
+    codeLocked: boolean;
     otherChefs: number;
     items: { name: string; quantity: number; price: number; notes: string | null; allergens: string[] }[];
     payoutAmount: number | null;
@@ -59,18 +66,34 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
     const orders = data as ChefOrder[];
     const [delivering, setDelivering] = useState<ChefOrder | null>(null);
     const [proof, setProof] = useState<string | null>(null);
+    const [code, setCode] = useState("");
+    const [codeError, setCodeError] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
 
     const move = useMutation({
-        mutationFn: ({ id, status, proof }: { id: number; status: string; proof?: string }) => api.patch(`/chef-portal/orders/${id}/status`, { status, proof }),
+        mutationFn: ({ id, status, proof, code }: { id: number; status: string; proof?: string; code?: string }) => api.patch(`/chef-portal/orders/${id}/status`, { status, proof, code }),
         onSuccess: (_d, v) => {
             toast.success(v.status === "completed" ? "Delivered. We've asked the customer to confirm, and told our team so you can be paid." : "Updated. The customer has been told.");
             setDelivering(null);
             setProof(null);
+            setCode("");
+            setCodeError(null);
             qc.invalidateQueries({ queryKey: ["chef-orders"] });
         },
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error, v) => {
+            // A wrong or missing delivery code is shown in the dialog, next to the box.
+            if (v.status === "completed" && /code/i.test(e.message)) {
+                setCodeError(e.message);
+                qc.invalidateQueries({ queryKey: ["chef-orders"] }).then(() => {
+                    const fresh = (qc.getQueryData(["chef-orders"]) as ChefOrder[] | undefined)?.find((o) => o.id === v.id);
+                    if (fresh) setDelivering(fresh);
+                });
+            } else toast.error(e.message);
+        },
     });
+    const directions = (o: ChefOrder) => o.destination
+        ? `https://www.google.com/maps/dir/?api=1&destination=${o.destination.lat},${o.destination.lng}&travelmode=driving`
+        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent([o.deliveryAddress?.line1, o.deliveryAddress?.city, o.deliveryAddress?.postcode].filter(Boolean).join(", "))}&travelmode=driving`;
 
     if (isLoading) return <Skeleton className="h-32 w-full rounded-3xl" />;
     if (orders.length === 0) {
@@ -117,7 +140,14 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
                 {order.deliveryAddress && (
                     <p className="flex items-start gap-2 rounded-xl bg-secondary/60 p-2.5 text-sm">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span>{[order.deliveryAddress.line1, order.deliveryAddress.city, order.deliveryAddress.postcode].filter(Boolean).join(", ")}{order.deliveryAddress.notes ? <span className="block text-muted-foreground">{order.deliveryAddress.notes}</span> : null}</span>
+                        <span className="min-w-0 flex-1">
+                            {[order.deliveryAddress.line1, order.deliveryAddress.city, order.deliveryAddress.postcode].filter(Boolean).join(", ")}
+                            {order.distanceMiles !== null && <span className="ml-1 text-muted-foreground">· {order.distanceMiles} miles from your kitchen</span>}
+                            {order.deliveryAddress.notes ? <span className="block text-muted-foreground">{order.deliveryAddress.notes}</span> : null}
+                            <a href={directions(order)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+                                <Navigation className="h-3.5 w-3.5" />Directions in Google Maps
+                            </a>
+                        </span>
                     </p>
                 )}
                 {order.otherChefs > 0 && <p className="text-xs text-muted-foreground">This order also has dishes from {order.otherChefs} other chef{order.otherChefs === 1 ? "" : "s"}. You only move your part.</p>}
@@ -172,18 +202,33 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
                 </section>
             )}
 
-            <Dialog open={!!delivering} onOpenChange={(o) => { if (!o) { setDelivering(null); setProof(null); } }}>
+            <Dialog open={!!delivering} onOpenChange={(o) => { if (!o) { setDelivering(null); setProof(null); setCode(""); setCodeError(null); } }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{delivering?.method === "pickup" ? "Collected" : "Delivered"}: order #{delivering?.id}</DialogTitle>
                         <DialogDescription>Add a photo of the food being handed over or left at the door. Our team checks it before paying you, and we'll ask the customer to confirm.</DialogDescription>
                     </DialogHeader>
+                    {delivering?.codeRequired && (
+                        <div className="space-y-2 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                            <label htmlFor="delivery-code" className="flex items-center gap-2 text-sm font-semibold"><KeyRound className="h-4 w-4 text-primary" />Customer's delivery code</label>
+                            {delivering.codeLocked ? (
+                                <p className="text-sm text-destructive">Too many wrong codes. MYUKCHEF has been told and will contact you to finish this order.</p>
+                            ) : (
+                                <>
+                                    <p className="text-xs text-muted-foreground">Ask the customer for the 4-digit code on their order page. You can't finish without it.</p>
+                                    <Input id="delivery-code" value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 4)); setCodeError(null); }}
+                                        inputMode="numeric" autoComplete="one-time-code" maxLength={4} placeholder="0000" className="h-12 text-center font-mono text-2xl tracking-[0.5em]" aria-invalid={!!codeError} />
+                                    {codeError && <p className="text-sm text-destructive" role="alert">{codeError}</p>}
+                                </>
+                            )}
+                        </div>
+                    )}
                     <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed p-3 text-sm text-muted-foreground hover:border-primary">
                         {proof ? <img src={proof} alt="Delivery evidence" className="max-h-56 rounded-xl object-contain" /> : uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <><Camera className="h-7 w-7 text-primary" />Take or choose a photo</>}
                         <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => upload(e.target.files?.[0])} />
                     </label>
                     <DialogFooter>
-                        <Button className="h-11" disabled={!proof || move.isPending} onClick={() => delivering && proof && move.mutate({ id: delivering.id, status: "completed", proof })}>
+                        <Button className="h-11" disabled={!proof || move.isPending || (!!delivering?.codeRequired && (delivering.codeLocked || code.length !== 4))} onClick={() => delivering && proof && move.mutate({ id: delivering.id, status: "completed", proof, code: code || undefined })}>
                             <Check className="mr-2 h-4 w-4" />{move.isPending ? "Saving..." : "Confirm delivery"}
                         </Button>
                     </DialogFooter>

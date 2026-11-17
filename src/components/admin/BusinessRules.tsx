@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Gift, Loader2, Percent, Save, ShieldCheck } from 'lucide-react';
+import { Gift, KeyRound, Loader2, Percent, Save, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ export function BusinessRules() {
     const selling = (settings.selling_rules ?? {}) as { requireHygiene?: boolean };
     const vat = (settings.vat_config ?? {}) as { registered?: boolean; rate?: number; number?: string };
     const referral = (settings.referral_config ?? {}) as { enabled?: boolean; points?: number };
+    const codeRules = (settings.delivery_code_config ?? {}) as { mode?: string; overAmount?: number };
 
     const [requireHygiene, setRequireHygiene] = useState(true);
     const [vatOn, setVatOn] = useState(false);
@@ -25,7 +26,10 @@ export function BusinessRules() {
     const [vatNumber, setVatNumber] = useState('');
     const [refOn, setRefOn] = useState(true);
     const [refPoints, setRefPoints] = useState('500');
+    const [codeMode, setCodeMode] = useState('first');
+    const [codeOver, setCodeOver] = useState('50');
     useEffect(() => {
+        setCodeMode(codeRules.mode ?? 'first'); setCodeOver(String(codeRules.overAmount ?? 50));
         setRequireHygiene(selling.requireHygiene !== false);
         setVatOn(vat.registered === true); setVatRate(String(vat.rate ?? 20)); setVatNumber(vat.number ?? '');
         setRefOn(referral.enabled !== false); setRefPoints(String(referral.points ?? 500));
@@ -47,6 +51,35 @@ export function BusinessRules() {
 
     return (
         <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-primary" />Delivery codes</CardTitle>
+                    <CardDescription>
+                        Like Uber Eats: the customer gets a 4-digit code on their order page and in their messages, and gives it to whoever hands over the food.
+                        The chef can't mark the order delivered or collected without it. After five wrong tries the order locks and you're told.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <fieldset className="space-y-2" aria-label="Which orders need a code">
+                        {[
+                            ['first', "A customer's first order", 'Recommended. Protects new customers and chefs when they don\'t know each other yet.'],
+                            ['over', 'First orders, and orders over an amount', 'Also asks for a code on bigger orders.'],
+                            ['all', 'Every order', 'The most secure, with one extra step at every handover.'],
+                            ['off', 'Never', 'No delivery codes.'],
+                        ].map(([value, label, hint]) => (
+                            <label key={value} className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                <input type="radio" name="code-mode" value={value} checked={codeMode === value} onChange={() => setCodeMode(value)} className="mt-1 accent-primary" />
+                                <span><span className="block font-semibold">{label}</span><span className="block text-sm text-muted-foreground">{hint}</span></span>
+                            </label>
+                        ))}
+                    </fieldset>
+                    {codeMode === 'over' && (
+                        <div className="grid max-w-xs gap-1"><Label htmlFor="code-over">Orders of at least (£)</Label><Input id="code-over" type="number" min="1" step="0.01" value={codeOver} onChange={(e) => setCodeOver(e.target.value)} /></div>
+                    )}
+                </CardContent>
+                {saveButton('delivery_code_config', { mode: codeMode, overAmount: Number(codeOver) })}
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Who can sell</CardTitle>
