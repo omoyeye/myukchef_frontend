@@ -1,3 +1,4 @@
+import { peopleLabel } from "@/lib/area";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -23,7 +24,7 @@ const PAYMENT: Record<string, { label: string; className: string }> = {
     paid: { label: "Paid", className: "bg-emerald-100 text-emerald-900" },
     refunded: { label: "Refunded", className: "bg-secondary text-secondary-foreground" },
 };
-const EMPTY = { eventName: "", eventDate: "", eventTime: "", headcount: 50, venue: "", contactPhone: "", contactEmail: "", specialRequests: "", adminNotes: "", status: "quoting" };
+const EMPTY = { eventName: "", eventDate: "", eventTime: "", headcount: 50, adults: 50 as number | string, kids: 0 as number | string, venue: "", contactPhone: "", contactEmail: "", specialRequests: "", adminNotes: "", status: "quoting" };
 const Pill = ({ s }: { s?: { label: string; className: string } }) => <span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold", s?.className)}>{s?.label}</span>;
 
 const EventManagement = () => {
@@ -114,7 +115,7 @@ const EventManagement = () => {
                                 {shown.length === 0 && <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No bookings found</TableCell></TableRow>}
                                 {shown.map((b) => (
                                     <TableRow key={b.id}>
-                                        <TableCell><button type="button" className="min-h-10 text-left font-medium hover:text-primary hover:underline" onClick={() => setOpenId(b.id)}>{b.eventName}</button><div className="text-xs text-muted-foreground">{b.headcount} guests</div></TableCell>
+                                        <TableCell><button type="button" className="min-h-10 text-left font-medium hover:text-primary hover:underline" onClick={() => setOpenId(b.id)}>{b.eventName}</button><div className="text-xs text-muted-foreground">{b.headcount} guests · {peopleLabel(b, b.headcount)}</div></TableCell>
                                         <TableCell>{b.customerName}<div className="text-xs text-muted-foreground">{b.customerEmail}</div></TableCell>
                                         <TableCell className="whitespace-nowrap">{format(new Date(b.eventDate), "d MMM yyyy")}</TableCell>
                                         <TableCell className="min-w-32">{b.quotesIn}/{b.quoteCount} replied<div className="text-xs text-muted-foreground">{(b.chefNames ?? []).join(", ")}</div></TableCell>
@@ -124,7 +125,7 @@ const EventManagement = () => {
                                         <TableCell>
                                             <div className="flex justify-end gap-1">
                                                 <Button size="sm" variant="outline" className="h-10" onClick={() => setOpenId(b.id)}>Manage</Button>
-                                                <Button size="icon" variant="ghost" aria-label={`Edit ${b.eventName}`} className="h-10 w-10" onClick={() => setForm({ ...EMPTY, ...b, id: b.id, specialRequests: b.specialRequests ?? "", adminNotes: b.adminNotes ?? "", eventDate: format(new Date(b.eventDate), "yyyy-MM-dd") })}><Pencil className="h-4 w-4" /></Button>
+                                                <Button size="icon" variant="ghost" aria-label={`Edit ${b.eventName}`} className="h-10 w-10" onClick={() => setForm({ ...EMPTY, ...b, id: b.id, adults: b.adults ?? b.headcount, kids: b.kids ?? 0, specialRequests: b.specialRequests ?? "", adminNotes: b.adminNotes ?? "", eventDate: format(new Date(b.eventDate), "yyyy-MM-dd") })}><Pencil className="h-4 w-4" /></Button>
                                                 <Button size="icon" variant="ghost" aria-label={`Delete ${b.eventName}`} className="h-10 w-10 text-destructive" onClick={() => { if (confirm(`Delete the booking "${b.eventName}" and its quotes?`)) remove.mutate(b.id); }}><Trash2 className="h-4 w-4" /></Button>
                                             </div>
                                         </TableCell>
@@ -145,7 +146,7 @@ const EventManagement = () => {
                         <div className="min-w-0 space-y-5">
                             <DialogHeader>
                                 <DialogTitle>{detail.eventName}</DialogTitle>
-                                <DialogDescription>{format(new Date(detail.eventDate), "EEE d MMMM yyyy")} at {detail.eventTime}, {detail.headcount} guests. {detail.venue}. Customer: {detail.customerName}, {detail.contactPhone}, {detail.contactEmail}. Staff only, never shown to chefs.</DialogDescription>
+                                <DialogDescription>{format(new Date(detail.eventDate), "EEE d MMMM yyyy")} at {detail.eventTime}, {detail.headcount} guests ({peopleLabel(detail, detail.headcount)}). {detail.venue}. Customer: {detail.customerName}, {detail.contactPhone}, {detail.contactEmail}. Staff only, never shown to chefs.</DialogDescription>
                             </DialogHeader>
 
                             <section className="rounded-2xl border p-4">
@@ -238,7 +239,10 @@ const EventManagement = () => {
                                 <div className="space-y-2 sm:col-span-2"><Label htmlFor="ev-name">Event name *</Label><Input id="ev-name" required {...field("eventName")} /></div>
                                 <div className="space-y-2"><Label htmlFor="ev-date">Date *</Label><Input id="ev-date" type="date" required {...field("eventDate")} /></div>
                                 <div className="space-y-2"><Label htmlFor="ev-time">Time *</Label><Input id="ev-time" type="time" required {...field("eventTime")} /></div>
-                                <div className="space-y-2"><Label htmlFor="ev-guests">Guests *</Label><Input id="ev-guests" type="number" inputMode="numeric" min={1} required {...field("headcount")} /></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2"><Label htmlFor="ev-adults">Adults *</Label><Input id="ev-adults" type="number" inputMode="numeric" min={0} required {...field("adults")} /></div>
+                                    <div className="space-y-2"><Label htmlFor="ev-kids">Children</Label><Input id="ev-kids" type="number" inputMode="numeric" min={0} {...field("kids")} /></div>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="ev-status">Status</Label>
                                     <select id="ev-status" className="h-10 w-full rounded-md border border-input bg-background px-3" {...field("status")}>

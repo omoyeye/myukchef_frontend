@@ -66,7 +66,7 @@ const QuoteForm = ({ quote, commissionPercent, onClose }: { quote: any | null; c
                     <form className="min-w-0 space-y-4" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
                         <DialogHeader>
                             <DialogTitle>Your quote for {quote.event.name}</DialogTitle>
-                            <DialogDescription>{quote.event.headcount} guests on {format(new Date(quote.event.date), "EEE d MMMM yyyy")}. Prices are per portion, and the menu price is filled in as a starting point.</DialogDescription>
+                            <DialogDescription>{quote.event.headcount} guests ({quote.event.people ?? `${quote.event.headcount} people`}) on {format(new Date(quote.event.date), "EEE d MMMM yyyy")}. Prices are per portion, and the menu price is filled in as a starting point.</DialogDescription>
                         </DialogHeader>
                         {items.length > 0 && (
                             <ul className="space-y-2">
@@ -147,7 +147,7 @@ export const ChefQuotes = () => {
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                         <p className="break-words font-display text-lg font-bold">{q.event.name}</p>
-                        <p className="text-sm text-muted-foreground">For {q.customerFirstName} · {format(new Date(q.event.date), "EEE d MMM yyyy")}{q.event.time ? ` at ${q.event.time}` : ""} · {q.event.headcount} guests</p>
+                        <p className="text-sm text-muted-foreground">For {q.customerFirstName} · {format(new Date(q.event.date), "EEE d MMM yyyy")}{q.event.time ? ` at ${q.event.time}` : ""} · {q.event.headcount} guests{q.event.people ? ` (${q.event.people})` : ""}</p>
                     </div>
                     <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
                 </div>

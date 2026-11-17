@@ -71,6 +71,9 @@ const Checkout = () => {
     // The wallet: suggested when there's credit, off until the customer switches it on.
     const { data: wallet } = useWallet();
     const [useWalletCredit, setUseWalletCredit] = useState(false);
+    // Chefs outside their usual area: the customer agrees to their extra wait before ordering.
+    const [farAccepted, setFarAccepted] = useState(false);
+    const [area, setArea] = useState({ far: 0, outside: 0 });
 
     const form = useForm<CheckoutFormValues>({
         resolver: zodResolver(checkoutSchema),
@@ -146,6 +149,7 @@ const Checkout = () => {
                 scheduledFor: when,
                 tip,
                 useWallet: walletOff > 0,
+                acceptFarWait: area.far > 0 && farAccepted,
                 deliveryAddress: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -415,6 +419,10 @@ const Checkout = () => {
                                 <WhenAndTip
                                     itemIds={items.map((i) => i.menuItem.id)}
                                     pickup={deliveryMethod === 'pickup'}
+                                    postcode={form.watch('postcode')}
+                                    farAccepted={farAccepted}
+                                    onFarAccepted={setFarAccepted}
+                                    onArea={setArea}
                                     when={when}
                                     onWhen={setWhen}
                                     tip={tip}
@@ -544,7 +552,7 @@ const Checkout = () => {
                                         size="lg"
                                         className="w-full text-xl h-16 shadow-[0_10px_25px_-5px_rgba(234,88,12,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(234,88,12,0.6)] transition-all rounded-2xl font-black bg-primary"
                                         onClick={form.handleSubmit(onSubmit)}
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || (deliveryMethod === 'delivery' && (area.outside > 0 || (area.far > 0 && !farAccepted)))}
                                     >
                                         {isSubmitting ? (
                                             <>

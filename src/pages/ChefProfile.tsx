@@ -1,3 +1,4 @@
+import { waitLabel } from "@/lib/area";
 import { useState } from "react";
 import { BestReview, ChefGallery } from "@/components/chefs/ChefHighlights";
 import { nextOpenLabel } from "@/lib/images";
@@ -232,7 +233,7 @@ const ChefProfile = () => {
                                     <p className="whitespace-pre-line text-muted-foreground">{chef.story}</p>
                                 </div>
                             )}
-                            {chef.location && <p className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" />Based in {chef.location}, delivers up to {chef.serviceRadiusMiles} miles</p>}
+                            {chef.location && <p className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" />Based in {chef.location}, delivers up to {chef.serviceRadiusMiles} miles{chef.acceptsFarOrders ? `, and ${chef.farMaxMiles ? `up to ${chef.farMaxMiles} miles` : "further"} if you can wait about ${waitLabel(chef.farExtraHours)} longer` : ""}</p>}
                             {chef.hygieneRating !== null && chef.hygieneRating !== undefined && <p className="text-sm text-muted-foreground">Food hygiene rating checked by {BRAND_NAME}. Ratings run from 0 to 5.</p>}
                         </div>
                     </TabsContent>

@@ -21,14 +21,15 @@ const DRAFT_KEY = "event-quote-draft";
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 interface Draft {
-    form: { eventName: string; eventDate: string; eventTime: string; headcount: number; venue: string; contactPhone: string; specialRequests: string };
+    // headcount is always adults + kids. Drafts saved before the split only have headcount.
+    form: { eventName: string; eventDate: string; eventTime: string; headcount: number; adults?: number; kids?: number; venue: string; contactPhone: string; specialRequests: string };
     picks: Record<string, number>; // Dish id to portions
     asked: Record<number, boolean>; // Chefs asked without choosing a dish
     preferences: Record<number, string>;
 }
 
 const emptyDraft: Draft = {
-    form: { eventName: "", eventDate: "", eventTime: "", headcount: 50, venue: "", contactPhone: "", specialRequests: "" },
+    form: { eventName: "", eventDate: "", eventTime: "", headcount: 50, adults: 50, kids: 0, venue: "", contactPhone: "", specialRequests: "" },
     picks: {},
     asked: {},
     preferences: {},
@@ -102,6 +103,8 @@ const Events = () => {
     const submit = useMutation({
         mutationFn: () => api.post("/events", {
             ...form,
+            adults: form.adults ?? form.headcount,
+            kids: form.kids ?? 0,
             chefRequests: selected.map((c) => ({
                 chefId: c.id,
                 preferences: preferences[c.id] ?? "",
@@ -197,7 +200,11 @@ const Events = () => {
                                 <div className="space-y-2 sm:col-span-2"><Label htmlFor="event-name">What's the occasion?</Label><Input id="event-name" className="h-11" autoComplete="off" placeholder="Our wedding" value={form.eventName} onChange={(e) => setForm({ eventName: e.target.value })} /></div>
                                 <div className="space-y-2"><Label htmlFor="event-date">Date</Label><Input id="event-date" className="h-11" type="date" min={todayIso()} value={form.eventDate} onChange={(e) => setForm({ eventDate: e.target.value })} /></div>
                                 <div className="space-y-2"><Label htmlFor="event-time">Time</Label><Input id="event-time" className="h-11" type="time" value={form.eventTime} onChange={(e) => setForm({ eventTime: e.target.value })} /></div>
-                                <div className="space-y-2"><Label htmlFor="event-guests">Guests</Label><Input id="event-guests" className="h-11" type="number" inputMode="numeric" min={1} value={form.headcount || ""} onChange={(e) => setForm({ headcount: Number(e.target.value) })} /></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2"><Label htmlFor="event-adults">Adults</Label><Input id="event-adults" className="h-11" type="number" inputMode="numeric" min={0} value={form.adults ?? form.headcount} onChange={(e) => { const adults = Math.max(0, Math.floor(Number(e.target.value) || 0)); setForm({ adults, headcount: adults + (form.kids ?? 0) }); }} /></div>
+                                    <div className="space-y-2"><Label htmlFor="event-kids">Children</Label><Input id="event-kids" className="h-11" type="number" inputMode="numeric" min={0} value={form.kids ?? 0} onChange={(e) => { const kids = Math.max(0, Math.floor(Number(e.target.value) || 0)); setForm({ kids, headcount: (form.adults ?? form.headcount) + kids }); }} /></div>
+                                    <p className="col-span-2 -mt-1 text-xs text-muted-foreground">{form.headcount} guests in all. Chefs see adults and children, so they can plan portions and the menu.</p>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="event-phone">Your phone number</Label>
                                     <Input id="event-phone" className="h-11" type="tel" inputMode="tel" autoComplete="tel" value={form.contactPhone} onChange={(e) => setForm({ contactPhone: e.target.value })} />

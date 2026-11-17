@@ -4,6 +4,7 @@ import { ChefPlansPanel, ChefReviewsPanel } from "@/components/plans/ChefPlansPa
 import { ChefOverview } from "@/components/plans/ChefPortalSections";
 import { ChefOrders } from "@/components/plans/ChefOrders";
 import { KitchenVideoField } from "@/components/plans/KitchenVideoField";
+import { DeliveryAreaField } from "@/components/plans/DeliveryAreaField";
 import { ChefQuotes, useChefQuotes } from "@/components/plans/ChefQuotes";
 import { PortalItem, PortalShell } from "@/components/layout/PortalShell";
 import { AllergenPicker } from "@/components/common/AllergenPicker";
@@ -45,6 +46,9 @@ interface Chef {
     phone: string | null;
     location: string | null;
     serviceRadiusMiles?: number;
+    acceptsFarOrders?: boolean;
+    farExtraHours?: number;
+    farMaxMiles?: number;
     yearsExperience: number | null;
     status: "pending" | "approved" | "suspended" | "rejected";
     rejectionReason: string | null;
@@ -402,8 +406,8 @@ const ChefDashboard = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2"><Label>Phone</Label><Input value={profile.phone || ""} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} /></div>
                                     <div className="space-y-2"><Label>Your postcode or town</Label><Input value={profile.location || ""} onChange={(e) => setProfile({ ...profile, location: e.target.value })} placeholder="Used to match you with nearby customers" /><p className="text-xs text-muted-foreground">Customers only see your general area and a rough distance, never your full postcode or address.</p></div>
-                                    <div className="space-y-2"><Label>How far you serve (miles)</Label><Input type="number" inputMode="numeric" min={1} max={500} value={profile.serviceRadiusMiles ?? 15} onChange={(e) => setProfile({ ...profile, serviceRadiusMiles: Number(e.target.value) })} /></div>
                                 </div>
+                                <DeliveryAreaField value={profile} onChange={(area) => setProfile({ ...profile, ...area })} />
                                 <div className="space-y-2"><Label>Short bio</Label><Textarea rows={3} value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} /></div>
                                 <div className="space-y-2">
                                     <Label htmlFor="chef-story">My story</Label>

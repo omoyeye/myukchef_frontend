@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { dayLabel, timeLabel, whenLabel } from "@/lib/when";
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, Heart, Loader2 } from 'lucide-react';
+import { CalendarClock, Heart, Loader2, MapPinOff, Route } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { waitLabel, type FarAway } from '@/lib/area';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
  * When the customer wants their food, chosen from times that suit every chef in the basket
  * (their opening hours and notice), and an optional tip that goes to the chefs in full.
  */
-export function WhenAndTip({ itemIds, pickup, when, onWhen, tip, onTip, foodTotal }: {
+export function WhenAndTip({ itemIds, pickup, postcode, farAccepted, onFarAccepted, onArea, when, onWhen, tip, onTip, foodTotal }: {
     itemIds: string[];
     pickup: boolean;
+    /** The delivery postcode, so chefs outside their usual area can add their extra wait. */
+    postcode?: string;
+    farAccepted?: boolean;
+    onFarAccepted?: (v: boolean) => void;
+    /** Tells the page how many chefs are far away (needing agreement) or don't deliver there. */
+    onArea?: (area: { far: number; outside: number }) => void;
     when: string | null;
     onWhen: (iso: string | null) => void;
     tip: number;
@@ -24,14 +32,18 @@ export function WhenAndTip({ itemIds, pickup, when, onWhen, tip, onTip, foodTota
     foodTotal: number;
 }) {
     const key = itemIds.slice().sort().join(',');
-    const { data, isLoading } = useQuery<{ slots: string[]; earliest: string | null; reason: string | null; noticeHours: number }>({
-        queryKey: ['order-slots', key],
-        queryFn: () => api.post('/orders/slots', { itemIds }),
+    const where = !pickup && postcode && postcode.replace(/\s/g, '').length >= 5 ? postcode.trim().toUpperCase() : '';
+    const { data, isLoading } = useQuery<{ slots: string[]; earliest: string | null; reason: string | null; noticeHours: number; farAway?: FarAway[]; outside?: { chefId: number; name: string; miles: number | null; radiusMiles: number }[] }>({
+        queryKey: ['order-slots', key, pickup, where],
+        queryFn: () => api.post('/orders/slots', { itemIds, method: pickup ? 'pickup' : 'delivery', postcode: where || undefined }),
         enabled: itemIds.length > 0,
         staleTime: 60_000,
         refetchInterval: 5 * 60_000,
     });
     const slots = useMemo(() => data?.slots ?? [], [data]);
+    const farAway = useMemo(() => data?.farAway ?? [], [data]);
+    const outside = useMemo(() => data?.outside ?? [], [data]);
+    useEffect(() => { onArea?.({ far: farAway.length, outside: outside.length }); }, [farAway.length, outside.length, onArea]);
     const days = useMemo(() => [...new Set(slots.map((s) => new Date(s).toDateString()))], [slots]);
     const chosenDay = when ? new Date(when).toDateString() : null;
     const dayOptions = days.map((d) => ({ value: d, label: dayLabel(slots.find((s) => new Date(s).toDateString() === d)!) }));
@@ -46,6 +58,25 @@ export function WhenAndTip({ itemIds, pickup, when, onWhen, tip, onTip, foodTota
                 <CardDescription>Your chefs cook to order. Times shown suit every chef in your basket.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
+                {outside.length > 0 && (
+                    <div role="alert" className="flex gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                        <MapPinOff className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                        <p>{outside.map((o) => `${o.name} doesn't deliver to ${where}${o.miles != null ? ` (${o.miles} miles away, they deliver up to ${o.radiusMiles})` : ''}`).join('. ')}. Choose collection, or swap their dishes for a chef nearer to you.</p>
+                    </div>
+                )}
+                {farAway.length > 0 && (
+                    <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
+                        <p className="flex items-center gap-2 font-semibold"><Route className="h-5 w-5" />You've chosen a chef from further away</p>
+                        <ul className="list-disc space-y-1 pl-5">
+                            {farAway.map((f) => <li key={f.chefId}><strong>{f.name}</strong> is {f.miles} miles away (they usually deliver up to {f.radiusMiles}). Allow about <strong>{waitLabel(f.extraHours)}</strong> longer.</li>)}
+                        </ul>
+                        <p>The times below already include the extra wait.</p>
+                        <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-background/70 p-3">
+                            <Checkbox checked={!!farAccepted} onCheckedChange={(v) => onFarAccepted?.(v === true)} className="mt-0.5" aria-label="I agree to the longer wait" />
+                            <span>I'm happy to wait the extra time, and I won't complain about how long delivery takes.</span>
+                        </label>
+                    </div>
+                )}
                 {isLoading ? (
                     <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Finding times…</p>
                 ) : slots.length === 0 ? (

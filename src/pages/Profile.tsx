@@ -1,3 +1,4 @@
+import { peopleLabel } from "@/lib/area";
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { CustomerPortal } from '@/components/layout/CustomerPortal';
@@ -60,6 +61,8 @@ interface EventBooking {
     eventDate: string;
     eventTime: string;
     headcount: number;
+    adults?: number | null;
+    kids?: number;
     venue: string;
     status: string;
     estimatedTotal: number;
@@ -383,7 +386,7 @@ const Profile = () => {
                                             <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${(BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoting).className}`}>{(BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoting).label}</span>
                                         </div>
                                         <p className="mt-1 text-sm text-muted-foreground">
-                                            {new Date(booking.eventDate).toLocaleDateString()} at {booking.eventTime} · {booking.headcount} guests
+                                            {new Date(booking.eventDate).toLocaleDateString()} at {booking.eventTime} · {peopleLabel(booking, booking.headcount)}
                                         </p>
                                         <p className="text-sm text-muted-foreground break-words">{booking.venue}</p>
                                         <div className="mt-2 flex items-center justify-between gap-2">

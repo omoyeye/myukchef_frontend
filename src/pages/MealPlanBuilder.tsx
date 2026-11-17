@@ -19,6 +19,7 @@ import { chefsPath, formatMiles, useUserLocation } from "@/lib/location";
 import { ALLERGENS, allergenLabel, allergenSummary } from "@/lib/allergens";
 import { DIETARY_OPTIONS, discountForWeeks, money, PlanConfig, planDate, planLength, WINDOWS } from "@/lib/mealPlans";
 import { cn } from "@/lib/utils";
+import { peopleLabel, waitLabel } from "@/lib/area";
 
 const DRAFT_KEY = "meal-plan-draft";
 const STEPS = ["Chef", "Plan", "Food", "Delivery", "Review"];
@@ -28,6 +29,9 @@ const initialDraft = {
     durationWeeks: 13,
     mealsPerWeek: 5,
     servings: 2,
+    // Who the food is for. servings is always adults + kids.
+    adults: 2,
+    kids: 0,
     dietary: [] as string[],
     avoidAllergens: [] as string[],
     rotation: [] as string[],
@@ -46,6 +50,8 @@ const readDraft = (): Draft | null => {
         return null;
     }
 };
+
+const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 
 const toggle = (list: string[], value: string) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
@@ -98,6 +104,9 @@ const MealPlanBuilder = () => {
     const [step, setStep] = useState(() => (params.get("resume") ? 4 : presetChef || draft.chefId ? 1 : 0));
     const [agreed, setAgreed] = useState(false);
     const [healthConsent, setHealthConsent] = useState(false);
+    // Chefs outside their usual area: the customer agrees to the longer wait.
+    const [farAccepted, setFarAccepted] = useState(false);
+    const [serverSaysFar, setServerSaysFar] = useState(false);
     const update = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
 
     useEffect(() => {
@@ -151,22 +160,29 @@ const MealPlanBuilder = () => {
     const weeklyTotal = chosen.length ? foodPerWeek * (1 - discount / 100) + fee : 0;
     const savingPerWeek = foodPerWeek * (discount / 100);
 
-    const earliest = addDays(new Date(), config?.leadDays ?? 3);
-    const dateChoices = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(earliest, i)), [config?.leadDays]); // eslint-disable-line react-hooks/exhaustive-deps
+    const chosenChef = chefs.find((c) => c.id === draft.chefId);
+    const farHours: number = chosenChef?.areaStatus === "far" ? chosenChef.extraWaitHours ?? 0 : 0;
+    const needsFarWait = farHours > 0 || serverSaysFar;
+    const earliest = addDays(new Date(), (config?.leadDays ?? 3) + Math.ceil(farHours / 24));
+    const dateChoices = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(earliest, i)), [config?.leadDays, farHours]); // eslint-disable-line react-hooks/exhaustive-deps
     const addressComplete = !!(draft.address.street.trim() && draft.address.city.trim() && draft.address.postcode.trim() && draft.address.phone.trim());
 
     const hasHealthDetails = draft.dietary.length > 0 || draft.avoidAllergens.length > 0;
-    const canContinue = [!!draft.chefId, true, chosen.length > 0 && (!hasHealthDetails || healthConsent), !!draft.startDate && addressComplete, agreed][step];
+    const canContinue = [!!draft.chefId, true, chosen.length > 0 && (!hasHealthDetails || healthConsent), !!draft.startDate && addressComplete, agreed && (!needsFarWait || farAccepted)][step];
 
     const submit = useMutation({
-        mutationFn: () => api.post("/meal-plans", { ...draft, durationMonths: undefined, chefId: draft.chefId, healthConsent }),
+        mutationFn: () => api.post("/meal-plans", { ...draft, servings: draft.adults + draft.kids, durationMonths: undefined, chefId: draft.chefId, healthConsent, acceptFarWait: needsFarWait && farAccepted }),
         onSuccess: (plan: any) => {
             try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* Nothing to clear. */ }
             qc.invalidateQueries({ queryKey: ["my-plans"] });
             toast.success("Request sent to your chef");
             navigate(`/my-plans/${plan.id}`);
         },
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => {
+            // The delivery address is outside the chef's usual area: ask the customer to agree to the wait.
+            if (/agree to the longer wait/.test(e.message)) { setServerSaysFar(true); setFarAccepted(false); }
+            toast.error(e.message);
+        },
     });
 
     const handleNext = () => {
@@ -176,6 +192,7 @@ const MealPlanBuilder = () => {
     };
 
     const planChefs = chefs.filter((c) => c.acceptsMealPlans);
+    const maxPeople = config?.maxPeople ?? 12;
     const chefFirstName = chefProfile?.displayName?.split(" ")[0] ?? "your chef";
     const isCustomer = user?.role === "customer";
 
@@ -191,7 +208,7 @@ const MealPlanBuilder = () => {
                 </div>
             </div>
             <dl className="mt-4 space-y-2 border-t pt-4 text-sm">
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Each week</dt><dd className="text-right font-medium">{draft.mealsPerWeek} meals for {draft.servings} ({portions} portions)</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Each week</dt><dd className="text-right font-medium">{draft.mealsPerWeek} meals for {peopleLabel(draft, draft.servings)} ({portions} portions)</dd></div>
                 {chosen.length > 0 ? (
                     <>
                         <div className="flex justify-between"><dt className="text-muted-foreground">Food</dt><dd>{money(foodPerWeek)}</dd></div>
@@ -247,7 +264,8 @@ const MealPlanBuilder = () => {
                                     <ul className="grid gap-3 sm:grid-cols-2">
                                         {planChefs.map((c) => {
                                             const selected = draft.chefId === c.id;
-                                            const outside = location && c.distanceMiles != null && !c.inServiceArea;
+                                            const outside = c.areaStatus ? c.areaStatus === "outside" : location && c.distanceMiles != null && !c.inServiceArea;
+                                            const far = c.areaStatus === "far";
                                             return (
                                                 <li key={c.id}>
                                                     <button
@@ -268,6 +286,7 @@ const MealPlanBuilder = () => {
                                                                 {c.distanceMiles != null && <span className="text-sm text-muted-foreground">{formatMiles(c.distanceMiles)}</span>}
                                                             </span>
                                                             {outside && <span className="text-xs text-muted-foreground">Doesn't deliver to you yet</span>}
+                                                            {far && <span className="block text-xs font-medium text-amber-700 dark:text-amber-300">Further away: deliveries take about {waitLabel(c.extraWaitHours)} longer</span>}
                                                         </span>
                                                         {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
                                                     </button>
@@ -333,7 +352,9 @@ const MealPlanBuilder = () => {
                                 </fieldset>
                                 <div className="space-y-3">
                                     <Stepper label="Meals each week" unit={draft.mealsPerWeek === 1 ? "meal" : "meals"} value={draft.mealsPerWeek} options={config?.mealOptions ?? [draft.mealsPerWeek]} onChange={(mealsPerWeek) => update({ mealsPerWeek })} />
-                                    <Stepper label="People to feed" unit={draft.servings === 1 ? "person" : "people"} value={draft.servings} options={config?.servingOptions ?? [draft.servings]} onChange={(servings) => update({ servings })} />
+                                    <Stepper label="Adults" unit={draft.adults === 1 ? "adult" : "adults"} value={draft.adults} options={range(draft.kids > 0 ? 0 : 1, maxPeople - draft.kids)} onChange={(adults) => update({ adults, servings: adults + draft.kids })} />
+                                    <Stepper label="Children" unit={draft.kids === 1 ? "child" : "children"} value={draft.kids} options={range(draft.adults > 0 ? 0 : 1, maxPeople - draft.adults)} onChange={(kids) => update({ kids, servings: draft.adults + kids })} />
+                                    <p className="text-sm text-muted-foreground">Your chef sees how many adults and children, so they can plan portions and spice. Every portion is priced the same.</p>
                                 </div>
                             </section>
                         )}
@@ -512,6 +533,13 @@ const MealPlanBuilder = () => {
                                     <p className="text-sm">{draft.startDate && `Every ${format(new Date(`${draft.startDate}T00:00:00`), "EEEE")}, starting ${planDate(draft.startDate, "d MMMM yyyy")}`}, {WINDOWS.find((w) => w.id === draft.deliveryWindow)?.label.toLowerCase()}</p>
                                     <p className="mt-1 flex items-start gap-1.5 text-sm text-muted-foreground"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{draft.address.street}, {draft.address.city}, {draft.address.postcode.toUpperCase()}</p>
                                 </div>
+                                {needsFarWait && (
+                                    <label className="flex cursor-pointer items-start gap-3 rounded-3xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
+                                        <Checkbox checked={farAccepted} onCheckedChange={(v) => setFarAccepted(v === true)} className="mt-0.5" aria-label="I agree to the longer wait" />
+                                        <span><span className="block font-semibold">{chefFirstName} is outside their usual delivery area for you</span>
+                                        {farHours > 0 ? `Each delivery takes about ${waitLabel(farHours)} longer to reach you. ` : "Deliveries take longer to reach you. "}I'm happy to wait the extra time, and I won't complain about how long delivery takes.</span>
+                                    </label>
+                                )}
                                 <div className="rounded-3xl bg-ink p-5 text-ink-foreground">
                                     <h2 className="mb-3 flex items-center gap-2 font-bold"><Sparkles className="h-4 w-4 text-primary" />The important bits</h2>
                                     <ul className="space-y-2 text-sm text-ink-foreground/85">

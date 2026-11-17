@@ -1,3 +1,4 @@
+import { peopleLabel, waitLabel } from "@/lib/area";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -38,7 +39,7 @@ const PlanDialog = ({ planId, onClose }: { planId: number | null; onClose: () =>
                     <div className="min-w-0 space-y-4">
                         <DialogHeader>
                             <DialogTitle>{plan.customerName}'s {planName(plan).toLowerCase()}</DialogTitle>
-                            <DialogDescription>{plan.mealsPerWeek} meals for {plan.servings}, every {planDate(plan.startDate, "EEEE")} until {planDate(plan.endDate, "d MMM yyyy")}</DialogDescription>
+                            <DialogDescription>{plan.mealsPerWeek} meals for {peopleLabel(plan, plan.servings)}, every {planDate(plan.startDate, "EEEE")} until {planDate(plan.endDate, "d MMM yyyy")}</DialogDescription>
                         </DialogHeader>
                         <NeedsLine plan={plan} />
                         {plan.requests && <p className="rounded-xl bg-secondary p-3 text-sm"><span className="font-semibold">Request:</span> {plan.requests}</p>}
@@ -132,7 +133,8 @@ export const ChefPlansPanel = () => {
                             <li key={plan.id} className="space-y-3 rounded-3xl border-2 border-primary/30 bg-card p-5">
                                 <div>
                                     <p className="font-display text-lg font-bold">{plan.customerName}</p>
-                                    <p className="text-sm text-muted-foreground">{planName(plan)} · {plan.mealsPerWeek} meals for {plan.servings}</p>
+                                    <p className="text-sm text-muted-foreground">{planName(plan)} · {plan.mealsPerWeek} meals for {peopleLabel(plan, plan.servings)}</p>
+                                    {plan.farAway?.length ? <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Outside your usual area ({plan.farAway[0].miles} miles). They agreed to wait {waitLabel(plan.farAway[0].extraHours)} longer.</p> : null}
                                 </div>
                                 <ul className="space-y-1 text-sm">
                                     <li className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" />Every {planDate(plan.startDate, "EEEE")} from {planDate(plan.startDate, "d MMM")}, {WINDOWS.find((w) => w.id === plan.deliveryWindow)?.label.toLowerCase()}</li>
@@ -173,9 +175,14 @@ export const ChefPlansPanel = () => {
                                             <li key={d.id} className="space-y-2 rounded-2xl bg-secondary/50 p-3">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                                     <p className="font-bold">{d.customerName} <span className="font-normal text-muted-foreground">· {WINDOWS.find((w) => w.id === d.deliveryWindow)?.label}</span></p>
-                                                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", WEEK_STATUS[d.status]?.className)}>{d.locked || d.status !== "scheduled" ? WEEK_STATUS[d.status]?.label : "Customer can still change"}</span>
+                                                    <span className="flex flex-wrap gap-1.5">
+                                                        {d.awaitingPayment !== undefined && (d.awaitingPayment
+                                                            ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">Waiting for payment: don't cook yet</span>
+                                                            : <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-900">Paid: go ahead and cook</span>)}
+                                                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", WEEK_STATUS[d.status]?.className)}>{d.locked || d.status !== "scheduled" ? WEEK_STATUS[d.status]?.label : "Customer can still change"}</span>
+                                                    </span>
                                                 </div>
-                                                <p className="text-sm">{d.items.map((i: any) => `${i.meals} × ${i.name}`).join(", ")} <span className="text-muted-foreground">(for {d.servings})</span></p>
+                                                <p className="text-sm">{d.items.map((i: any) => `${i.meals} × ${i.name}`).join(", ")} <span className="text-muted-foreground">(for {d.people ?? d.servings})</span></p>
                                                 <ul className="rounded-xl bg-background p-2 text-xs">
                                                     <li className="font-semibold">Allergen label to include with delivery:</li>
                                                     {d.items.map((i: any) => <li key={i.dishId}>{i.name}: {allergenSummary(i.allergens)}</li>)}
@@ -258,7 +265,7 @@ export const ChefPlansPanel = () => {
                         <DialogTitle>{responding?.action === "accept" ? "Accept this plan?" : "Decline this request?"}</DialogTitle>
                         <DialogDescription>
                             {responding?.action === "accept"
-                                ? `You'll cook ${responding.plan.mealsPerWeek} meals for ${responding.plan.servings} every ${planDate(responding.plan.startDate, "EEEE")} for ${responding.plan.weeksTotal} weeks. You'll then see their delivery address. Keep all contact in the plan's messages.`
+                                ? `You'll cook ${responding.plan.mealsPerWeek} meals for ${peopleLabel(responding.plan, responding.plan.servings)} every ${planDate(responding.plan.startDate, "EEEE")} for ${responding.plan.weeksTotal} weeks. You'll then see their delivery address. Keep all contact in the plan's messages.`
                                 : "The customer will be told, and they can choose another chef."}
                         </DialogDescription>
                     </DialogHeader>

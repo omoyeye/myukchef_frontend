@@ -1,3 +1,4 @@
+import { peopleLabel } from "@/lib/area";
 import { useEffect, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -117,7 +118,7 @@ const MyBookingDetail = () => {
                         <h1 className="mt-2 break-words font-display text-3xl font-extrabold md:text-4xl">{booking.eventName}</h1>
                         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-foreground/75">
                             <li className="flex items-center gap-1.5"><Clock className="h-4 w-4" />{format(new Date(booking.eventDate), "EEE d MMMM yyyy")} at {booking.eventTime}</li>
-                            <li className="flex items-center gap-1.5"><Users className="h-4 w-4" />{booking.headcount} guests</li>
+                            <li className="flex items-center gap-1.5"><Users className="h-4 w-4" />{booking.headcount} guests ({peopleLabel(booking, booking.headcount)})</li>
                             <li className="flex min-w-0 items-center gap-1.5"><MapPin className="h-4 w-4 shrink-0" /><span className="break-words">{booking.venue}</span></li>
                         </ul>
                         {booking.status !== "cancelled" && <div className="mt-5"><Stepper current={bookingStage(booking)} /></div>}

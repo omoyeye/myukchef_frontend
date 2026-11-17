@@ -29,6 +29,11 @@ export interface PlanSummary {
     durationWeeks?: number | null;
     mealsPerWeek: number;
     servings: number;
+    /** Adults and children within servings (null on plans made before the split). */
+    adults?: number | null;
+    kids?: number;
+    people?: string;
+    farAway?: { chefId: number; name: string; miles: number; radiusMiles: number; extraHours: number }[] | null;
     deliveryWindow: string;
     startDate: string;
     endDate: string;
@@ -48,6 +53,8 @@ export interface PlanSummary {
     weeksSkipped: number;
     estimatedTotal: number;
     nextDelivery: PlanWeek | null;
+    /** The next delivery still to pay for by card. */
+    nextPayment?: { weekId: number; weekNumber: number; deliveryDate: string; amount: number } | null;
     chef?: { id: number; displayName: string; avatar: string | null; specialty: string | null };
     customerName?: string;
     customerEmail?: string;
@@ -55,6 +62,8 @@ export interface PlanSummary {
 }
 
 export interface PlanDetail extends PlanSummary {
+    /** The "pay now" card: null when nothing is due or card payments are off. */
+    paymentDue?: import("@/components/plans/PaymentDueCard").PaymentDue | null;
     viewerRole: "customer" | "chef" | "admin";
     chef: { id: number; displayName: string; avatar: string | null; specialty: string | null };
     customerName: string;
@@ -91,6 +100,8 @@ export interface PlanConfig {
     deliveryFee: number;
     mealOptions: number[];
     servingOptions: number[];
+    /** Adults and children together, at most. */
+    maxPeople?: number;
 }
 
 export const DIETARY_OPTIONS = [
@@ -146,6 +157,8 @@ export interface ReorderSuggestion {
     length: string;
     mealsPerWeek: number;
     servings: number;
+    adults?: number | null;
+    kids?: number;
     favouriteDishes: { name: string; image: string; meals: number }[];
     weeklyPrice: number | null;
     endedOn: string;

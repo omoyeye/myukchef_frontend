@@ -1,8 +1,9 @@
+import { peopleLabel } from "@/lib/area";
 import { useEffect } from "react";
 import { ListSkeleton } from "@/components/common/Skeletons";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, ChefHat, Loader2, Plus } from "lucide-react";
+import { ArrowRight, CalendarDays, ChefHat, CreditCard, Loader2, Plus } from "lucide-react";
 import SEO from "@/components/common/SEO";
 import { CustomerPortal } from "@/components/layout/CustomerPortal";
 import { CustomerPlanHistory, ReorderSuggestions } from "@/components/plans/PlanHistory";
@@ -15,11 +16,12 @@ import { cn } from "@/lib/utils";
 
 const OPEN = ["requested", "active", "paused"];
 
-const PlanCard = ({ plan }: { plan: PlanSummary }) => {
+const PlanCard = ({ plan, cardPayments }: { plan: PlanSummary; cardPayments: boolean }) => {
     const status = PLAN_STATUS[plan.status] ?? PLAN_STATUS.active;
     const next = plan.nextDelivery;
+    const due = cardPayments && plan.status === "active" ? plan.nextPayment : null;
     return (
-        <Link to={`/my-plans/${plan.id}`} className="group block overflow-hidden rounded-3xl border bg-card transition-shadow hover:shadow-warm-lg">
+        <Link to={due ? `/my-plans/${plan.id}?pay=${due.weekId}` : `/my-plans/${plan.id}`} className="group block overflow-hidden rounded-3xl border bg-card transition-shadow hover:shadow-warm-lg">
             <div className="flex items-start gap-3 p-5">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                     {plan.chef?.avatar ? <img src={plan.chef.avatar} alt="" className="h-full w-full object-cover" /> : <ChefHat className="h-6 w-6 text-primary" />}
@@ -29,9 +31,16 @@ const PlanCard = ({ plan }: { plan: PlanSummary }) => {
                         <p className="font-display text-lg font-bold">{planName(plan)}</p>
                         <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
                     </div>
-                    <p className="break-words text-sm text-muted-foreground">with {plan.chef?.displayName} · {plan.mealsPerWeek} meals for {plan.servings}</p>
+                    <p className="break-words text-sm text-muted-foreground">with {plan.chef?.displayName} · {plan.mealsPerWeek} meals for {peopleLabel(plan, plan.servings)}</p>
                 </div>
             </div>
+            {due && (
+                <div className="mx-5 mb-3 flex items-center gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-3">
+                    <CreditCard className="h-5 w-5 shrink-0 text-primary" />
+                    <p className="min-w-0 flex-1 text-sm"><span className="font-bold">Payment due: {money(due.amount)}</span> for {planDate(due.deliveryDate, "EEEE d MMM")}. Your chef cooks once it's paid.</p>
+                    <span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground">Pay now</span>
+                </div>
+            )}
             {OPEN.includes(plan.status) && next && (
                 <div className="mx-5 flex items-center gap-3 rounded-2xl bg-secondary/70 p-3">
                     <span className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-background">
@@ -65,6 +74,7 @@ const MyPlans = () => {
     }, [authLoading, isAuthenticated, navigate]);
 
     const { data: plans = [], isLoading } = useQuery<PlanSummary[]>({ queryKey: ["my-plans"], queryFn: () => api.get("/meal-plans/mine"), enabled: isAuthenticated });
+    const { data: payment } = useQuery<{ cardPayments: boolean }>({ queryKey: ["payment-config"], queryFn: () => api.get("/orders/payment-config"), staleTime: 60_000 });
 
     const open = plans.filter((p) => OPEN.includes(p.status));
 
@@ -92,7 +102,7 @@ const MyPlans = () => {
                 ) : (
                     <div className="space-y-8">
                         <ReorderSuggestions />
-                        {open.length > 0 && <div className="grid gap-4 md:grid-cols-2">{open.map((p) => <PlanCard key={p.id} plan={p} />)}</div>}
+                        {open.length > 0 && <div className="grid gap-4 md:grid-cols-2">{open.map((p) => <PlanCard key={p.id} plan={p} cardPayments={!!payment?.cardPayments} />)}</div>}
                         <CustomerPlanHistory />
                     </div>
                 )}

@@ -1,3 +1,4 @@
+import { peopleLabel } from "@/lib/area";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Search, Trash2 } from "lucide-react";
@@ -83,7 +84,7 @@ const MealPlanManagement = () => {
                                     <TableRow key={p.id}>
                                         <TableCell><div className="font-medium">{p.customerName}</div><div className="text-xs text-muted-foreground">{p.customerEmail}</div></TableCell>
                                         <TableCell>{p.chefName}</TableCell>
-                                        <TableCell className="whitespace-nowrap">{planName(p)}<div className="text-xs text-muted-foreground">{p.mealsPerWeek} meals for {p.servings}</div></TableCell>
+                                        <TableCell className="whitespace-nowrap">{planName(p)}<div className="text-xs text-muted-foreground">{p.mealsPerWeek} meals for {peopleLabel(p, p.servings)}</div></TableCell>
                                         <TableCell className="whitespace-nowrap">{p.weeksDelivered}/{p.weeksTotal}</TableCell>
                                         <TableCell>{money(p.estimatedTotal)}</TableCell>
                                         <TableCell><span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold", PLAN_STATUS[p.status]?.className)}>{PLAN_STATUS[p.status]?.label}</span></TableCell>
@@ -109,7 +110,7 @@ const MealPlanManagement = () => {
                         <form className="min-w-0 space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
                             <DialogHeader>
                                 <DialogTitle>Plan #{detail.id}: {detail.customerName} with {detail.chef.displayName}</DialogTitle>
-                                <DialogDescription>{planName(detail)}, {detail.mealsPerWeek} meals for {detail.servings}, {planDate(detail.startDate, "d MMM yyyy")} to {planDate(detail.endDate, "d MMM yyyy")}. {detail.deliveryAddress.street}, {detail.deliveryAddress.postcode}. {detail.deliveryAddress.phone}</DialogDescription>
+                                <DialogDescription>{planName(detail)}, {detail.mealsPerWeek} meals for {peopleLabel(detail, detail.servings)}, {planDate(detail.startDate, "d MMM yyyy")} to {planDate(detail.endDate, "d MMM yyyy")}. {detail.deliveryAddress.street}, {detail.deliveryAddress.postcode}. {detail.deliveryAddress.phone}</DialogDescription>
                             </DialogHeader>
                             {owed > 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-950">{money(owed)} delivered and not yet marked as paid.</p>}
                             <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">

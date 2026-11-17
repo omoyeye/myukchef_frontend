@@ -1,3 +1,4 @@
+import { peopleLabel } from "@/lib/area";
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChefHat, History, RefreshCw, Sparkles } from 'lucide-react';
@@ -44,7 +45,7 @@ export function ReorderSuggestions({ className }: { className?: string }) {
                             </div>
                         )}
                         <p className="text-sm text-muted-foreground">
-                            {s.length} · {s.mealsPerWeek} meals a week for {s.servings}{s.weeklyPrice ? ` · about ${money(s.weeklyPrice)} a week` : ''}
+                            {s.length} · {s.mealsPerWeek} meals a week for {peopleLabel(s, s.servings)}{s.weeklyPrice ? ` · about ${money(s.weeklyPrice)} a week` : ''}
                         </p>
                         <Button asChild className="mt-auto h-11 rounded-full font-bold">
                             <Link to={`/my-plans/${s.planId}?reorder=1`}><RefreshCw className="mr-2 h-4 w-4" />Order again</Link>

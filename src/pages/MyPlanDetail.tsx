@@ -1,5 +1,7 @@
+import { peopleLabel } from "@/lib/area";
 import { useEffect, useMemo, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
+import { PaymentDueCard } from "@/components/plans/PaymentDueCard";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PlanLengthPicker } from "@/components/plans/PlanLengthPicker";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -276,7 +278,7 @@ const MyPlanDetail = () => {
                             <div className="min-w-0 flex-1">
                                 <span className={cn("inline-block rounded-full px-2.5 py-1 text-xs font-bold", status.className)}>{status.label}</span>
                                 <h1 className="mt-1.5 font-display text-2xl font-extrabold md:text-4xl">{planName(plan)}</h1>
-                                <p className="break-words text-ink-foreground/70">with {plan.chef.displayName} · {plan.mealsPerWeek} meals for {plan.servings}</p>
+                                <p className="break-words text-ink-foreground/70">with {plan.chef.displayName} · {plan.mealsPerWeek} meals for {peopleLabel(plan, plan.servings)}</p>
                             </div>
                         </div>
                         <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-ink-foreground/15 pt-4 text-sm">
@@ -290,6 +292,7 @@ const MyPlanDetail = () => {
 
                 {/* STATE-SPECIFIC NOTICES */}
                 <div className="mt-4 space-y-3">
+                    {plan.viewerRole === "customer" && plan.paymentDue && <PaymentDueCard planId={plan.id} chefName={plan.chef.displayName} due={plan.paymentDue} highlight={!!searchParams.get("pay")} />}
                     {plan.status === "requested" && (
                         <div className="flex gap-3 rounded-2xl bg-amber-50 p-4 text-amber-950">
                             <CalendarClock className="h-5 w-5 shrink-0" />

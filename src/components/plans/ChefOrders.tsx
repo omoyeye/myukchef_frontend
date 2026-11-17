@@ -1,3 +1,4 @@
+import { waitLabel } from "@/lib/area";
 import { useState } from "react";
 import { OrderChat } from "@/components/orders/OrderChat";
 import { format } from "date-fns";
@@ -48,6 +49,8 @@ interface ChefOrder {
     /** Where to take it, and how far from your kitchen (for a collection: how far the customer is coming). */
     destination: { lat: number; lng: number } | null;
     distanceMiles: number | null;
+    /** The customer is outside your usual area and agreed to wait this many hours longer. */
+    farWaitHours?: number | null;
     /** The customer's 4-digit code is needed to finish; you get it from them at the door. */
     codeRequired: boolean;
     codeLocked: boolean;
@@ -143,6 +146,7 @@ export const ChefOrders = ({ enabled }: { enabled: boolean }) => {
                         <span className="min-w-0 flex-1">
                             {[order.deliveryAddress.line1, order.deliveryAddress.city, order.deliveryAddress.postcode].filter(Boolean).join(", ")}
                             {order.distanceMiles !== null && <span className="ml-1 text-muted-foreground">· {order.distanceMiles} miles from your kitchen</span>}
+                            {order.farWaitHours ? <span className="block font-medium text-amber-700 dark:text-amber-300">Outside your usual area. The customer agreed to wait {waitLabel(order.farWaitHours)} longer and not to complain about the time.</span> : null}
                             {order.deliveryAddress.notes ? <span className="block text-muted-foreground">{order.deliveryAddress.notes}</span> : null}
                             <a href={directions(order)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
                                 <Navigation className="h-3.5 w-3.5" />Directions in Google Maps
