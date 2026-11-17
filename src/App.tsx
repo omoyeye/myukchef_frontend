@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { CookieConsent } from "@/components/layout/CookieConsent";
+import { TrackingTags } from "@/components/common/TrackingTags";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -66,6 +67,7 @@ const VideoDetail = lazy(() => import("./pages/Videos").then((m) => ({ default: 
 const VideoModeration = lazy(() => import("./pages/admin/VideoModeration"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
+const SeoSettings = lazy(() => import("./pages/admin/SeoSettings"));
 const MealPlans = lazy(() => import("./pages/MealPlans"));
 const MealPlanBuilder = lazy(() => import("./pages/MealPlanBuilder"));
 const MyPlans = lazy(() => import("./pages/MyPlans"));
@@ -90,6 +92,7 @@ const App = () => (
             <ScrollToTop />
             <OfflineBanner />
             <CookieConsent />
+            <TrackingTags />
             <AppErrorBoundary>
             <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -163,6 +166,7 @@ const App = () => (
                 <Route path="videos" element={<VideoModeration />} />
                 <Route path="system" element={<SystemHealth />} />
                 <Route path="banners" element={<BannerManagement />} />
+                <Route path="seo" element={<SeoSettings />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

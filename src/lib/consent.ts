@@ -5,7 +5,11 @@ import { useSyncExternalStore } from 'react';
  * drafts and this choice itself. Anything optional (today, Google Maps, which loads Google's scripts and
  * may set Google cookies) only runs once the person has agreed, and they can change their mind at any time.
  */
-export interface Consent { maps: boolean; decidedAt: string; version: number }
+/**
+ * analytics: Google Analytics / Tag Manager / Clarity. marketing: Meta and TikTok pixels.
+ * Both are undefined for people who chose before those tags were added; they're asked again then.
+ */
+export interface Consent { maps: boolean; analytics?: boolean; marketing?: boolean; decidedAt: string; version: number }
 
 const KEY = 'myukchef-consent';
 /** Bump when the list of optional cookies changes, so people are asked again. */
@@ -24,8 +28,8 @@ function read(): Consent | null {
     return cached;
 }
 
-export function saveConsent(choice: { maps: boolean }) {
-    cached = { maps: choice.maps, decidedAt: new Date().toISOString(), version: CONSENT_VERSION };
+export function saveConsent(choice: { maps: boolean; analytics?: boolean; marketing?: boolean }) {
+    cached = { maps: choice.maps, analytics: !!choice.analytics, marketing: !!choice.marketing, decidedAt: new Date().toISOString(), version: CONSENT_VERSION };
     try { localStorage.setItem(KEY, JSON.stringify(cached)); } catch { /* private mode: the choice lasts this visit */ }
     listeners.forEach((l) => l());
 }

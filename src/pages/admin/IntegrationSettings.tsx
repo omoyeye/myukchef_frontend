@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CheckCircle2, Copy, CreditCard, Eye, EyeOff, Loader2, Mail, PlugZap, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Copy, CreditCard, Eye, EyeOff, Loader2, Mail, PlugZap, Sparkles, Trash2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import {
     AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-type Provider = 'stripe' | 'brevo';
+type Provider = 'stripe' | 'brevo' | 'claude';
 interface Field { label: string; secret: boolean; source: 'saved' | 'server' | 'default' | 'none'; isSet: boolean; value: string }
 interface ProviderView {
     provider: Provider;
@@ -42,6 +42,7 @@ const HELP: Record<string, string> = {
     'brevo.apiKey': 'Brevo → SMTP & API → API keys. Starts with xkeysib-.',
     'brevo.senderEmail': 'Must be a sender you have verified in Brevo.',
     'brevo.supportEmail': 'Where messages from the Support page go.',
+    'claude.apiKey': 'console.anthropic.com, API keys: create a key. Starts with sk-ant-. Used only by Super Admins to draft wording.',
     'brevo.smsSender': 'Shown as the sender of text messages. Up to 11 letters or numbers.',
 };
 
@@ -55,9 +56,9 @@ const IntegrationSettings = () => {
     return (
         <div className="space-y-8 max-w-4xl">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Payments and email</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Payments and keys</h1>
                 <p className="text-muted-foreground mt-1">
-                    Keys for Stripe (card payments) and Brevo (email and text messages). Only Super Admins can see this page.
+                    Keys for Stripe (card payments), Brevo (email and text messages) and Claude (AI writing help). Only Super Admins can see this page.
                     Secret keys are stored encrypted and are never shown again in full.
                 </p>
             </div>
@@ -72,6 +73,12 @@ const IntegrationSettings = () => {
                 icon={<Mail className="h-5 w-5" />}
                 title="Brevo email and SMS"
                 description="Sends order updates, sign-up emails, support messages and text messages."
+            />
+            <ProviderCard
+                view={data.claude}
+                icon={<Sparkles className="h-5 w-5" />}
+                title="Claude AI writing help"
+                description="Drafts search engine titles and descriptions on the SEO page. Nothing is published until you check and save it. Uses Anthropic's Claude Opus 5.5, billed to your Claude account."
             />
         </div>
     );
@@ -235,11 +242,13 @@ function ProviderCard({ view, icon, title, description }: { view: ProviderView; 
             <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Remove the saved {view.provider === 'stripe' ? 'Stripe' : 'Brevo'} keys?</AlertDialogTitle>
+                        <AlertDialogTitle>Remove the saved {view.provider === 'stripe' ? 'Stripe' : view.provider === 'claude' ? 'Claude' : 'Brevo'} keys?</AlertDialogTitle>
                         <AlertDialogDescription>
                             {view.provider === 'stripe'
                                 ? "Unless the server has its own Stripe keys, checkout will stop taking card payments and orders will be placed unpaid."
-                                : "Unless the server has its own Brevo key, emails and text messages will stop sending."}
+                                : view.provider === 'claude'
+                                    ? "AI writing help on the SEO page will stop, unless the server has its own Claude key."
+                                    : "Unless the server has its own Brevo key, emails and text messages will stop sending."}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

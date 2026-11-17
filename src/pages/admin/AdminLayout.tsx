@@ -1,28 +1,30 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, Megaphone, CalendarDays, CalendarHeart, ChefHat, Clapperboard, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, MessagesSquare, Settings, Star, Ticket, Users } from 'lucide-react';
+import { Activity, BarChart3, Megaphone, CalendarDays, CalendarHeart, ChefHat, Clapperboard, ClipboardList, KeyRound, LayoutDashboard, LifeBuoy, Loader2, Menu as MenuIcon, MessagesSquare, Search, Settings, Star, Ticket, Users } from 'lucide-react';
 import SEO from '@/components/common/SEO';
 import { PortalShell } from '@/components/layout/PortalShell';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Grouped by job: what's happening, the work coming in, the people, what's on the site, growing, and setup.
 const SECTIONS = [
-    { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
-    { icon: ChefHat, label: 'Chefs', to: '/admin/chefs' },
-    { icon: Users, label: 'Customers', to: '/admin/customers' },
-    { icon: CalendarDays, label: 'Meal Plans', to: '/admin/meal-plans' },
-    { icon: ClipboardList, label: 'Orders', to: '/admin/orders' },
-    { icon: BarChart3, label: 'Reports', to: '/admin/reports' },
-    { icon: CalendarHeart, label: 'Events', to: '/admin/events' },
-    { icon: MenuIcon, label: 'Menu', to: '/admin/menu' },
-    { icon: Star, label: 'Reviews', to: '/admin/reviews' },
-    { icon: Clapperboard, label: 'Chef videos', to: '/admin/videos' },
-    { icon: LifeBuoy, label: 'Support', to: '/admin/support' },
-    { icon: Ticket, label: 'Discounts', to: '/admin/discounts' },
-    { icon: Megaphone, label: 'Banners', to: '/admin/banners' },
-    { icon: MessagesSquare, label: 'Messages', to: '/admin/messages' },
-    { icon: Settings, label: 'Settings', to: '/admin/settings' },
-    { icon: KeyRound, label: 'Payments & email', to: '/admin/payments-email' },
-    { icon: Activity, label: 'System health', to: '/admin/system' },
+    { group: 'Overview', icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
+    { group: 'Overview', icon: BarChart3, label: 'Reports', to: '/admin/reports' },
+    { group: 'Orders', icon: ClipboardList, label: 'Orders', to: '/admin/orders' },
+    { group: 'Orders', icon: CalendarDays, label: 'Meal plans', to: '/admin/meal-plans' },
+    { group: 'Orders', icon: CalendarHeart, label: 'Events', to: '/admin/events' },
+    { group: 'People', icon: ChefHat, label: 'Chefs', to: '/admin/chefs' },
+    { group: 'People', icon: Users, label: 'Customers', to: '/admin/customers' },
+    { group: 'People', icon: Star, label: 'Reviews', to: '/admin/reviews' },
+    { group: 'People', icon: LifeBuoy, label: 'Support', to: '/admin/support' },
+    { group: 'Content', icon: MenuIcon, label: 'Menu', to: '/admin/menu' },
+    { group: 'Content', icon: Clapperboard, label: 'Chef videos', to: '/admin/videos' },
+    { group: 'Content', icon: Megaphone, label: 'Banners', to: '/admin/banners' },
+    { group: 'Marketing', icon: Ticket, label: 'Discounts', to: '/admin/discounts' },
+    { group: 'Marketing', icon: Search, label: 'SEO & tracking', to: '/admin/seo' },
+    { group: 'Marketing', icon: MessagesSquare, label: 'Messages', to: '/admin/messages' },
+    { group: 'Settings', icon: Settings, label: 'Settings', to: '/admin/settings' },
+    { group: 'Settings', icon: KeyRound, label: 'Payments & keys', to: '/admin/payments-email' },
+    { group: 'Settings', icon: Activity, label: 'System health', to: '/admin/system' },
 ];
 
 const AdminLayout = () => {

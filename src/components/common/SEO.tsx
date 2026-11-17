@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { BRAND_DESCRIPTION, BRAND_NAME, DEFAULT_OG_IMAGE, SITE_URL } from '@/lib/site';
+import { usePublicSeo } from '@/lib/tracking';
 
 interface SEOProps {
     title: string;
@@ -24,9 +25,15 @@ const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
     tag.setAttribute('content', content);
 };
 
-const SEO = ({ title, description = BRAND_DESCRIPTION, image, type = 'website', noindex = false, jsonLd }: SEOProps) => {
+const SEO = ({ title: pageTitle, description: pageDescription = BRAND_DESCRIPTION, image, type = 'website', noindex = false, jsonLd }: SEOProps) => {
     const { pathname } = useLocation();
     const structuredData = jsonLd ? JSON.stringify(jsonLd) : null;
+    // Super Admin, SEO can set a main page's title and description; those win over the built-in text.
+    const { data: seo } = usePublicSeo();
+    const custom = seo?.pages[pathname === '/' ? '/' : pathname.replace(/\/$/, '')];
+    const title = custom?.title || pageTitle;
+    const description = custom?.description || (pathname === '/' && seo?.defaults.description) || pageDescription;
+    const hidden = noindex || seo?.allowIndexing === false;
 
     useEffect(() => {
         const fullTitle = title.includes(BRAND_NAME) ? title : `${title} | ${BRAND_NAME}`;
@@ -35,7 +42,7 @@ const SEO = ({ title, description = BRAND_DESCRIPTION, image, type = 'website', 
 
         document.title = fullTitle;
         setMeta('name', 'description', description);
-        setMeta('name', 'robots', noindex || PRIVATE_PATHS.test(pathname) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large');
+        setMeta('name', 'robots', hidden || PRIVATE_PATHS.test(pathname) ? 'noindex, nofollow' : 'index, follow, max-image-preview:large');
         setMeta('property', 'og:title', fullTitle);
         setMeta('property', 'og:description', description);
         setMeta('property', 'og:image', imageUrl);
@@ -61,7 +68,7 @@ const SEO = ({ title, description = BRAND_DESCRIPTION, image, type = 'website', 
         script.textContent = structuredData.replace(/</g, '\\u003c');
         document.head.appendChild(script);
         return () => script.remove();
-    }, [title, description, image, type, noindex, pathname, structuredData]);
+    }, [title, description, image, type, hidden, pathname, structuredData]);
 
     return null;
 };
