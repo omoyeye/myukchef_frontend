@@ -223,6 +223,17 @@ label {
     text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
   }
 }
+/* A slow, endless strip of dishes. The list is drawn twice, so moving by half loops seamlessly. */
+@keyframes plan-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.plan-marquee {
+  animation: plan-marquee 45s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-marquee { animation: none; }
+}
 .hero-zoom {
   animation: hero-zoom 16s ease-in-out infinite alternate;
 }
