@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, LayoutGrid, LogOut, LucideIcon } from "lucide-react";
+import { ChevronDown, LayoutGrid, LogOut, LucideIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,8 @@ function grouped(items: PortalItem[]) {
 
 const OPEN_KEY = "portal-closed-groups";
 const readClosed = (): string[] => { try { return JSON.parse(localStorage.getItem(OPEN_KEY) || "[]"); } catch { return []; } };
+const COLLAPSED_KEY = "portal-sidebar-collapsed";
+const readCollapsed = () => { try { return localStorage.getItem(COLLAPSED_KEY) === "1"; } catch { return false; } };
 
 interface Props {
     name: string;
@@ -57,32 +59,54 @@ export const PortalShell = ({ name, tagline, initial, items, onLogout, children 
         try { localStorage.setItem(OPEN_KEY, JSON.stringify(next)); } catch { /* private mode */ }
         return next;
     });
+    // On large screens the sidebar can shrink to a rail of icons; the choice is remembered.
+    const [collapsed, setCollapsed] = useState(readCollapsed);
+    const toggleSidebar = () => setCollapsed((c) => {
+        try { localStorage.setItem(COLLAPSED_KEY, c ? "0" : "1"); } catch { /* private mode */ }
+        return !c;
+    });
     const link = (item: PortalItem) => (
         <Link
             key={item.to}
             to={item.to}
             aria-current={item.active ? "page" : undefined}
-            className={cn("flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-colors", item.active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            aria-label={collapsed ? (item.badge ? `${item.label}, ${item.badge} new` : item.label) : undefined}
+            title={collapsed ? item.label : undefined}
+            className={cn(
+                "relative flex min-h-10 items-center gap-3 rounded-xl text-sm transition-colors",
+                collapsed ? "justify-center px-0" : "px-3",
+                item.active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
         >
             <item.icon className="h-[18px] w-[18px] shrink-0" />
-            {item.label}
-            <Count value={item.badge} />
+            {collapsed ? (
+                item.badge ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background" /> : null
+            ) : (
+                <>
+                    <span className="truncate">{item.label}</span>
+                    <Count value={item.badge} />
+                </>
+            )}
         </Link>
     );
 
     return (
         <div className="flex h-dvh bg-secondary/10">
-            <aside className="hidden w-64 flex-col border-r bg-background md:flex">
-                <div className="flex items-center gap-3 border-b p-5">
+            <aside className={cn("hidden shrink-0 flex-col border-r bg-background transition-[width] duration-200 ease-out md:flex", collapsed ? "w-[76px]" : "w-64")}>
+                <div className={cn("flex items-center gap-3 border-b", collapsed ? "justify-center px-2 py-5" : "p-5")}>
                     <Link to="/" aria-label="Back to MYUKCHEF" className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-white p-1 shadow-sm"><img src="/logo.png" alt="" className="h-full w-full object-contain" /></Link>
-                    <div className="min-w-0">
-                        <p className="truncate font-display font-extrabold text-primary">{name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{tagline}</p>
-                    </div>
+                    {!collapsed && (
+                        <div className="min-w-0">
+                            <p className="truncate font-display font-extrabold text-primary">{name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{tagline}</p>
+                        </div>
+                    )}
                 </div>
-                <nav aria-label={name} className="flex-1 space-y-1 overflow-y-auto p-3">
+                <nav aria-label={name} className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-2 py-3" : "p-3")}>
                     {groups.map((g) => {
                         if (!g.name) return <div key="top" className="space-y-1">{g.items.map(link)}</div>;
+                        // Collapsed: every item shows, with a thin line between groups instead of headings.
+                        if (collapsed) return <div key={g.name} className="space-y-0.5 border-t pt-2 first:border-t-0">{g.items.map(link)}</div>;
                         const hasActive = g.items.some((i) => i.active);
                         const open = hasActive || !closed.includes(g.name);
                         const badge = g.items.reduce((s, i) => s + (i.badge ?? 0), 0);
@@ -105,23 +129,40 @@ export const PortalShell = ({ name, tagline, initial, items, onLogout, children 
                         );
                     })}
                 </nav>
-                <div className="border-t p-3">
-                    <Button variant="outline" className="h-11 w-full justify-start gap-2" onClick={onLogout}><LogOut className="h-4 w-4" />Sign out</Button>
+                <div className={cn("border-t", collapsed ? "p-2" : "p-3")}>
+                    {collapsed
+                        ? <Button variant="outline" size="icon" className="h-11 w-full" onClick={onLogout} aria-label="Sign out" title="Sign out"><LogOut className="h-4 w-4" /></Button>
+                        : <Button variant="outline" className="h-11 w-full justify-start gap-2" onClick={onLogout}><LogOut className="h-4 w-4" />Sign out</Button>}
                 </div>
             </aside>
 
             <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background px-4 md:h-16 md:px-6">
                     <p className="truncate font-display font-extrabold md:hidden">{name}</p>
-                    <p className="hidden truncate font-semibold md:block">
+                    <div className="hidden min-w-0 items-center gap-2 md:flex">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                        onClick={toggleSidebar}
+                        aria-label={collapsed ? "Expand the menu" : "Collapse the menu"}
+                        aria-expanded={!collapsed}
+                        title={collapsed ? "Expand the menu" : "Collapse the menu"}
+                    >
+                        {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+                    </Button>
+                    <p className="truncate font-semibold">
                         {(() => { const a = items.find((i) => i.active); return a ? <>{a.group && <span className="font-normal text-muted-foreground">{a.group} / </span>}{a.label}</> : null; })()}
                     </p>
+                    </div>
                     <div className="flex shrink-0 items-center gap-3">
                         <NotificationCenter />
                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary" aria-hidden>{initial}</span>
                     </div>
                 </header>
-                <div className="flex-1 overflow-auto p-4 pb-24 md:p-8">{children}</div>
+                {/* `relative` keeps hidden screen-reader labels inside this scroll area; without it they
+                    escape and stretch the whole page, adding a second scrollbar. */}
+                <div className="relative flex-1 overflow-auto p-4 pb-24 md:p-8">{children}</div>
 
                 <button
                     type="button"
