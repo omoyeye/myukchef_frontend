@@ -6,7 +6,7 @@ import { nextOpenLabel } from "@/lib/images";
 import { PageSkeleton } from "@/components/common/Skeletons";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, CalendarDays, CalendarHeart, ChefHat, Heart, MapPin, Share2, ShieldCheck, Sparkles, Users, Video } from "lucide-react";
+import { BadgeCheck, CalendarDays, CalendarHeart, ChefHat, Heart, MapPin, Share2, ShieldCheck, Sparkles, Timer, Users, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Layout } from "@/components/layout/Layout";
 import { PageLoader } from "@/components/layout/AppShell";
@@ -129,6 +129,9 @@ const ChefProfile = () => {
                                 {chef.paused ? <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-200">Not taking orders right now</span>
                                     : chef.openNow ? <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">Cooking now</span>
                                     : chef.nextOpen ? <span className="rounded-full bg-ink-foreground/10 px-2.5 py-0.5 text-xs font-semibold">{nextOpenLabel(chef.nextOpen)}</span> : null}
+                                {!chef.paused && chef.prepMinMinutes != null && chef.prepMaxMinutes != null && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-ink-foreground/10 px-2.5 py-0.5 text-xs font-semibold"><Timer className="h-3.5 w-3.5" />Ready in {chef.prepMinMinutes}-{chef.prepMaxMinutes} min</span>
+                                )}
                             </div>
                             <BestReview chefId={chef.id} firstName={firstName} />
                         </div>

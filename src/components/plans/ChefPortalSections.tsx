@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, CalendarHeart, ClipboardList, Inbox, Send, ShoppingBag, Star, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, CalendarDays, CalendarHeart, ClipboardList, Flame, Inbox, Send, ShoppingBag, Star, UtensilsCrossed } from "lucide-react";
+import { ActionTile, rise } from "@/components/portal/PortalBits";
 import { useChefQuotes } from "./ChefQuotes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
@@ -39,29 +40,26 @@ export const ChefOverview = ({ enabled }: { enabled: boolean }) => {
     const next = sheet[0];
 
     const tiles = [
-        { label: "Plan requests", value: requests, icon: Inbox, to: "?tab=plans", highlight: requests > 0 },
-        { label: "Active plans", value: activePlans, icon: CalendarDays, to: "?tab=plans" },
-        { label: "Open orders", value: openOrders, icon: ShoppingBag, to: "?tab=orders", highlight: openOrders > 0 },
-        { label: "Event quotes to send", value: quotesNeeded, icon: Send, to: "?tab=bookings", highlight: quotesNeeded > 0 },
-        { label: "Upcoming events", value: upcomingEvents, icon: CalendarHeart, to: "?tab=bookings" },
-        { label: "Your rating", value: average, icon: Star, to: "?tab=reviews" },
+        { label: "Plan requests", value: requests, icon: Inbox, to: "?tab=plans", highlight: requests > 0, tint: "bg-primary/15 text-primary" },
+        { label: "Open orders", value: openOrders, icon: ShoppingBag, to: "?tab=orders", highlight: openOrders > 0, tint: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
+        { label: "Event quotes to send", value: quotesNeeded, icon: Send, to: "?tab=bookings", highlight: quotesNeeded > 0, tint: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
+        { label: "Upcoming events", value: upcomingEvents, icon: CalendarHeart, to: "?tab=bookings", tint: "bg-pink-500/15 text-pink-600 dark:text-pink-400" },
+        { label: "Active plans", value: activePlans, icon: CalendarDays, to: "?tab=plans", tint: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+        { label: reviews.length ? `Your rating (${reviews.length})` : "Your rating", value: average, icon: Star, to: "?tab=reviews", tint: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
     ];
 
     return (
         <div className="space-y-5">
-            <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                {tiles.map((tile) => (
-                    <li key={tile.label}>
-                        <Link to={tile.to} className={cn("block h-full rounded-2xl border bg-card p-4 transition-colors hover:border-primary", tile.highlight && "border-primary bg-primary/5")}>
-                            <tile.icon className="h-5 w-5 text-primary" />
-                            <p className="mt-2 font-display text-3xl font-extrabold">{tile.value}</p>
-                            <p className="text-sm text-muted-foreground">{tile.label}</p>
-                        </Link>
-                    </li>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {tiles.map((tile, i) => (
+                    <ActionTile key={tile.label} to={tile.to} icon={tile.icon} label={tile.label} value={typeof tile.value === "number" ? tile.value : tile.value} tint={tile.tint} alert={tile.highlight} delay={80 + i * 60} />
                 ))}
-            </ul>
-            <div className="rounded-3xl bg-ink p-5 text-ink-foreground md:p-6">
-                <h2 className="flex items-center gap-2 font-display text-lg font-bold"><ClipboardList className="h-5 w-5 text-primary" />Next to cook</h2>
+            </div>
+            <Link to="?tab=plans" className="portal-lift hero-rise relative block overflow-hidden rounded-3xl bg-ink p-5 text-ink-foreground md:p-6" style={rise(460)}>
+                <div aria-hidden className="hero-glow pointer-events-none absolute -right-20 -top-24 h-60 w-60 rounded-full bg-primary/35 blur-3xl" />
+                <div aria-hidden className="portal-sheen" />
+                <div className="relative">
+                <h2 className="flex items-center gap-2 font-display text-lg font-bold"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary"><Flame className="h-4 w-4 text-white" /></span>Next to cook</h2>
                 {next ? (
                     <>
                         <p className="mt-2 font-display text-2xl font-extrabold">{planDate(next.deliveryDate, "EEEE d MMMM")}</p>
@@ -70,8 +68,9 @@ export const ChefOverview = ({ enabled }: { enabled: boolean }) => {
                 ) : (
                     <p className="mt-2 text-ink-foreground/70">Nothing in the next two weeks yet.</p>
                 )}
-                <Link to="?tab=plans" className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-primary">Open your cook sheet <ArrowRight className="h-4 w-4" /></Link>
-            </div>
+                <span className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-primary">Open your cook sheet <ArrowRight className="h-4 w-4" /></span>
+                </div>
+            </Link>
         </div>
     );
 };

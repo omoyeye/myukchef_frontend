@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Clock, Loader2, PauseCircle } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,8 @@ type DayHours = { open: boolean; from: string; to: string };
 type Hours = Partial<Record<(typeof DAYS)[number][0], DayHours>>;
 
 /**
- * When the chef cooks one-off orders: opening days and times, the notice they need, and a switch
- * to pause new orders. Customers can only choose delivery times that fit.
+ * When the chef cooks one-off orders: opening days and times and the notice they need. Customers
+ * can only choose delivery times that fit. Opening and closing the kitchen is on KitchenStatusCard.
  */
 export function CookingTimes({ chef }: { chef: { openingHours?: Hours | null; ordersPaused?: boolean; noticeHours?: number } }) {
     const qc = useQueryClient();
@@ -39,14 +39,6 @@ export function CookingTimes({ chef }: { chef: { openingHours?: Hours | null; or
                 <CardDescription>Customers can only order for times that suit you. Times are UK time.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-                <div className={`flex items-center justify-between gap-4 rounded-xl border p-4 ${chef.ordersPaused ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20' : ''}`}>
-                    <div>
-                        <Label htmlFor="pause-orders" className="flex items-center gap-2 font-semibold"><PauseCircle className="h-4 w-4" />Pause new orders</Label>
-                        <p className="text-sm text-muted-foreground">{chef.ordersPaused ? "You're paused. Customers can't order from you until you switch this off." : 'On holiday or too busy? Stop new orders for now. Orders you already have carry on.'}</p>
-                    </div>
-                    <Switch id="pause-orders" checked={!!chef.ordersPaused} disabled={save.isPending} onCheckedChange={(ordersPaused) => save.mutate({ ordersPaused })} />
-                </div>
-
                 <div className="grid gap-1 sm:max-w-xs">
                     <Label htmlFor="notice">Notice I need (hours)</Label>
                     <Input id="notice" type="number" min="0" max="168" className="h-11" value={notice} onChange={(e) => setNotice(e.target.value)} />

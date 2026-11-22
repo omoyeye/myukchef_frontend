@@ -13,6 +13,8 @@ import { AllergenPicker } from "@/components/common/AllergenPicker";
 import { ChefCompliance } from "@/components/plans/ChefCompliance";
 import { ChefPayouts } from "@/components/payouts/ChefPayouts";
 import { CookingTimes } from "@/components/plans/CookingTimes";
+import { KitchenStatusCard } from "@/components/plans/KitchenStatusCard";
+import { greeting, PortalHero } from "@/components/portal/PortalBits";
 import { ChefEarnings } from "@/components/payouts/ChefEarnings";
 import { ChefCredentials } from "@/components/credentials/ChefCredentials";
 import { ChefVideos } from "@/components/social/ChefVideos";
@@ -42,6 +44,8 @@ interface Chef {
     openingHours?: Record<string, { open: boolean; from: string; to: string }> | null;
     ordersPaused?: boolean;
     noticeHours?: number;
+    prepMinMinutes?: number | null;
+    prepMaxMinutes?: number | null;
     bio: string | null;
     specialty: string | null;
     avatar: string | null;
@@ -241,23 +245,47 @@ const ChefDashboard = () => {
         <PortalShell name="Chef Portal" tagline={chef.displayName} initial={chef.displayName[0] ?? "C"} items={sections} onLogout={signOut}>
             <SEO noindex title="Chef Portal" description="Manage your meal plans, dishes and profile." />
             <div className="mx-auto max-w-6xl">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                    <div className="flex min-w-0 items-center gap-4">
-                        <div className="h-14 w-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                            {chef.avatar ? <img src={chef.avatar} alt={chef.displayName} className="w-full h-full object-cover" /> : <ChefHat className="h-7 w-7 text-primary" />}
+                {tab === "overview" ? (
+                    <PortalHero className="mb-6">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="rounded-full border-2 border-primary p-1">
+                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/15">
+                                    {chef.avatar ? <img src={chef.avatar} alt="" className="h-full w-full object-cover" /> : <ChefHat className="h-7 w-7 text-primary" />}
+                                </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm text-ink-foreground/70">{greeting()},</p>
+                                <h1 className="truncate font-display text-3xl font-extrabold">{chef.displayName.split(" ")[0]}</h1>
+                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                    <StatusBadge status={chef.status} />
+                                    {chef.specialty && <span className="text-sm text-ink-foreground/70">{chef.specialty}</span>}
+                                </div>
+                            </div>
+                            {isApproved && (
+                                <div className="flex flex-wrap gap-2">
+                                    <Button asChild variant="outline" className="h-11 border-white/20 bg-white/10 text-ink-foreground hover:bg-white/20 hover:text-ink-foreground"><a href={`/chefs/${chef.id}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Public page</a></Button>
+                                    <Button className="h-11" onClick={() => navigate("/chef/dashboard?tab=add")}><Plus className="mr-2 h-4 w-4" />Add a dish</Button>
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold">{chef.displayName}</h1>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                                <StatusBadge status={chef.status} />
-                                {chef.specialty && <span className="text-sm text-muted-foreground">{chef.specialty}</span>}
+                    </PortalHero>
+                ) : (
+                    <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                        <div className="flex min-w-0 items-center gap-4">
+                            <div className="h-14 w-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                {chef.avatar ? <img src={chef.avatar} alt={chef.displayName} className="w-full h-full object-cover" /> : <ChefHat className="h-7 w-7 text-primary" />}
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold">{chef.displayName}</h1>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <StatusBadge status={chef.status} />
+                                    {chef.specialty && <span className="text-sm text-muted-foreground">{chef.specialty}</span>}
+                                </div>
                             </div>
                         </div>
+                        {isApproved && <Button asChild variant="outline" className="h-11"><a href={`/chefs/${chef.id}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />View public page</a></Button>}
                     </div>
-                    {isApproved && <Button asChild variant="outline" className="h-11"><a href={`/chefs/${chef.id}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />View public page</a></Button>}
-                </div>
-
+                )}
                 {/* Status banners */}
                 {chef.status === "pending" && (
                     <Card className="mb-6 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
@@ -294,7 +322,7 @@ const ChefDashboard = () => {
                 )}
 
                 <Tabs value={tab}>
-                    <TabsContent value="overview" className="space-y-10"><ChefOverview enabled={isApproved} />{isApproved && <WeeklyReport who="chef" />}</TabsContent>
+                    <TabsContent value="overview" className="space-y-10"><KitchenStatusCard chef={chef} compact /><ChefOverview enabled={isApproved} />{isApproved && <WeeklyReport who="chef" />}</TabsContent>
                     <TabsContent value="videos"><ChefVideos /></TabsContent>
                     <TabsContent value="orders"><ChefOrders enabled /></TabsContent>
                     <TabsContent value="bookings"><ChefQuotes /></TabsContent>
@@ -391,6 +419,7 @@ const ChefDashboard = () => {
 
                     {/* PROFILE */}
                     <TabsContent value="profile" className="space-y-6">
+                        <KitchenStatusCard chef={chef} />
                         <CookingTimes chef={chef} />
                         <Card>
                             <CardHeader><CardTitle>Profile Settings</CardTitle></CardHeader>

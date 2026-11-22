@@ -75,7 +75,9 @@ export default defineConfig(({ mode }) => {
             options: { cacheName: 'menu-data', networkTimeoutSeconds: 4, expiration: { maxEntries: 60, maxAgeSeconds: 86400 } },
           },
           {
-            urlPattern: ({ request }) => request.destination === 'image',
+            // Only the site's own images. Photos on other sites (chef and dish photos) load straight from
+            // the browser: the worker may only fetch from this site, so caching them would break them.
+            urlPattern: ({ request, sameOrigin }) => request.destination === 'image' && sameOrigin,
             handler: 'CacheFirst',
             options: { cacheName: 'images', expiration: { maxEntries: 120, maxAgeSeconds: 2592000 }, cacheableResponse: { statuses: [0, 200] } },
           },

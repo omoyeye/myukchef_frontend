@@ -21,6 +21,9 @@ const OrderTracker = lazy(() => import("./pages/OrderTracker"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const TeamAdmin = lazy(() => import("./pages/admin/TeamAdmin"));
+const TeamChat = lazy(() => import("./pages/admin/TeamChat"));
+const CompleteProfile = lazy(() => import("./pages/admin/CompleteProfile"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const MenuManagement = lazy(() => import("./pages/admin/MenuManagement"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
@@ -149,6 +152,7 @@ const App = () => (
               <Route path="/admin/reset-password" element={<ResetPassword portal="admin" />} />
 
               {/* Admin Routes */}
+              <Route path="/admin/complete-profile" element={<CompleteProfile />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="menu" element={<MenuManagement />} />
@@ -171,6 +175,8 @@ const App = () => (
                 <Route path="banners" element={<BannerManagement />} />
                 <Route path="seo" element={<SeoSettings />} />
                 <Route path="wallets" element={<WalletsAdmin />} />
+                <Route path="team" element={<TeamAdmin />} />
+                <Route path="team-chat" element={<TeamChat />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -130,7 +130,6 @@ const CustomerManagement = () => {
                                     <select id="acct-role" className="h-10 w-full rounded-md border border-input bg-background px-3" value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
                                         <option value="customer">Customer</option>
                                         <option value="chef">Chef</option>
-                                        <option value="admin">Super Admin</option>
                                     </select>
                                 </div>
                             </div>

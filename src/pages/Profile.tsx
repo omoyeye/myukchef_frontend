@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
-import { MapPin, LogOut, ChevronRight, Leaf, Gift, Clock, Plus, Trash2, Zap, Ticket, CalendarHeart } from 'lucide-react';
+import { MapPin, LogOut, ChevronRight, Leaf, Gift, Clock, Plus, Trash2, Zap, Ticket, CalendarHeart, Heart, Receipt, Wallet as WalletIcon } from 'lucide-react';
+import { ActionTile, greeting, HeroStat, LiveDot, PortalHero, rise } from '@/components/portal/PortalBits';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -91,6 +92,10 @@ const Profile = () => {
         enabled: !!user
     });
 
+    // Meal plans and wallet, for the welcome card.
+    const { data: plans = [] } = useQuery<{ status: string }[]>({ queryKey: ['my-plans'], queryFn: () => api.get('/meal-plans/mine'), enabled: !!user });
+    const { data: wallet } = useWallet();
+
     // Fetch Addresses
     const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery<Address[]>({
         queryKey: ['my-addresses'],
@@ -141,6 +146,9 @@ const Profile = () => {
         addAddressMutation.mutate(newAddress);
     };
 
+    const DONE = ['delivered', 'completed', 'cancelled'];
+    const liveOrders = orders.filter((o) => !DONE.includes(o.status)).length;
+
     if (!user) {
         return (
             <Layout>
@@ -157,147 +165,178 @@ const Profile = () => {
         <CustomerPortal>
             <SEO noindex title={`${user.name}'s Profile`} description="Manage your MYUKCHEF account, wallet, and order history." />
             <div>
-                <div className="max-w-3xl space-y-4 md:space-y-6">
+                <div className="max-w-5xl space-y-4 md:space-y-6">
 
-                    {/* User Header */}
-                    <div className="flex items-center gap-3 md:gap-4 mb-4">
-                        <Avatar className="h-14 w-14 shrink-0 md:h-20 md:w-20 border-4 border-background shadow-sm">
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                            <h1 className="truncate text-xl md:text-2xl font-bold">{user.name}</h1>
-                            <p className="truncate text-sm md:text-base text-muted-foreground">{user.email}</p>
-                            <div className="flex flex-wrap items-center gap-1 md:gap-2 mt-1">
-                                <ProfileWalletBadge />
+                    {activeTab === 'overview' ? (
+                        <PortalHero>
+                            <div className="flex items-center gap-4">
+                                <div className="rounded-full border-2 border-primary p-1">
+                                    <Avatar className="h-14 w-14 md:h-16 md:w-16"><AvatarFallback className="bg-primary/15 text-lg font-bold text-primary">{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm text-ink-foreground/70">{greeting()},</p>
+                                    <h1 className="truncate font-display text-2xl font-extrabold md:text-3xl">{user.name.split(' ')[0]}</h1>
+                                    <p className="truncate text-xs text-ink-foreground/60 md:text-sm">{user.email}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" aria-label="Log out" className="h-11 w-11 shrink-0 text-ink-foreground/70 hover:bg-white/10 hover:text-ink-foreground" onClick={logout}>
+                                    <LogOut className="h-5 w-5" />
+                                </Button>
                             </div>
+                            <div className="flex gap-2 sm:gap-3">
+                                <HeroStat value={orders.length} label="Orders" />
+                                <HeroStat value={plans.filter((p) => ['active', 'requested', 'accepted'].includes(p.status)).length} label="Meal plans" />
+                                <HeroStat value={wallet?.available ?? 0} label="Wallet" format={(n) => `£${n.toFixed(2)}`} />
+                            </div>
+                            {liveOrders > 0 && (
+                                <button type="button" onClick={() => navigate(`/order-tracker/${orders.find((o) => !DONE.includes(o.status))!.id}`)} className="flex w-full items-center gap-3 rounded-2xl bg-white/[0.08] px-4 py-3 text-left transition-colors hover:bg-white/[0.12]">
+                                    <LiveDot />
+                                    <span className="flex-1 text-sm font-semibold">{liveOrders === 1 ? '1 order on its way' : `${liveOrders} orders on their way`}</span>
+                                    <span className="text-sm font-bold text-primary">Track</span>
+                                </button>
+                            )}
+                        </PortalHero>
+                    ) : (
+                        <div className="flex items-center gap-3 md:gap-4 mb-4">
+                            <Avatar className="h-14 w-14 shrink-0 md:h-20 md:w-20 border-4 border-background shadow-sm">
+                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                                <h1 className="truncate text-xl md:text-2xl font-bold">{user.name}</h1>
+                                <p className="truncate text-sm md:text-base text-muted-foreground">{user.email}</p>
+                                <div className="flex flex-wrap items-center gap-1 md:gap-2 mt-1">
+                                    <ProfileWalletBadge />
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" aria-label="Log out" className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive" onClick={logout}>
+                                <LogOut className="h-5 w-5" />
+                            </Button>
                         </div>
-                        <Button variant="ghost" size="icon" aria-label="Log out" className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive" onClick={logout}>
-                            <LogOut className="h-5 w-5" />
-                        </Button>
-                    </div>
+                    )}
 
                     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
 
                         {/* OVERVIEW TAB */}
                         <TabsContent value="overview" className="space-y-6 animate-fade-in">
-                            <Link to="/my-plans" className="flex items-center gap-4 rounded-3xl bg-ink p-5 text-ink-foreground transition-transform hover:-translate-y-0.5">
-                                <CalendarHeart className="h-8 w-8 shrink-0 text-primary" />
-                                <span className="min-w-0 flex-1">
-                                    <span className="block font-bold">My meal plans</span>
-                                    <span className="block text-sm text-ink-foreground/70">Change, skip or pause your deliveries, and see your saved chefs</span>
-                                </span>
-                                <ChevronRight className="h-5 w-5 shrink-0" />
-                            </Link>
-
-                            <WalletNudge />
-
-                            <AccountData />
-
-                            {/* Recent Activity Mini-List */}
-                            <div>
-                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                                    <Clock className="h-5 w-5 text-primary" /> Recent Orders
-                                </h3>
-                                <div className="space-y-3">
-                                    {isLoadingOrders ? (
-                                        <Skeleton className="h-20 w-full" />
-                                    ) : orders.length > 0 ? (
-                                        orders.slice(0, 2).map(order => (
-                                            <div key={order.id} className="bg-background rounded-xl p-4 border shadow-sm flex items-center justify-between group cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(`/order-tracker/${order.id}`)}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-10 w-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors uppercase font-black italic">
-                                                        M
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold">Order #{order.id}</p>
-                                                        <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
-                                                    </div>
-                                                </div>
-                                                <Badge variant="outline" className="capitalize">{order.status}</Badge>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground italic">No orders yet. Let's change that!</p>
-                                    )}
-                                    <Button variant="link" className="w-full text-primary font-bold uppercase tracking-widest text-xs" onClick={() => handleTabChange('history')}>
-                                        View Full History <ChevronRight className="ml-1 h-3 w-3" />
-                                    </Button>
-                                </div>
+                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                <ActionTile to="/profile?tab=history" icon={Receipt} label="My orders" hint={liveOrders ? `${liveOrders} on the way` : 'Track and reorder'} tint="bg-sky-500/15 text-sky-600 dark:text-sky-400" alert={liveOrders > 0} delay={80} />
+                                <ActionTile to="/my-plans" icon={CalendarHeart} label="Meal plans" hint="Change, skip or pause" tint="bg-primary/15 text-primary" delay={140} />
+                                <ActionTile to="/wallet" icon={WalletIcon} label="Wallet" hint={wallet ? `${pounds(wallet.available)} to spend` : 'Cashback and rewards'} tint="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" delay={200} />
+                                <ActionTile to="/saved-chefs" icon={Heart} label="Saved chefs" hint="Chefs you love" tint="bg-pink-500/15 text-pink-600 dark:text-pink-400" delay={260} />
                             </div>
 
-                            {/* Addresses Section */}
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                                        <MapPin className="h-5 w-5 text-primary" /> Delivery Spots
+                            <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+                                <div className="hero-rise space-y-6" style={rise(320)}>
+                                {/* Recent Activity Mini-List */}
+                                <div>
+                                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-primary" /> Recent Orders
                                     </h3>
-                                    <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" className="h-11 gap-1 rounded-lg md:h-9">
-                                                <Plus className="h-3 w-3" /> Add Spot
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Add New Spot</DialogTitle>
-                                                <DialogDescription>Where should we deliver your orders?</DialogDescription>
-                                            </DialogHeader>
-                                            <form onSubmit={handleAddAddress}>
-                                                <div className="space-y-4 py-4">
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="name">Label (e.g. Home Base)</Label>
-                                                        <Input id="name" placeholder="Home, Office..." value={newAddress.name} onChange={e => setNewAddress({ ...newAddress, name: e.target.value })} required />
-                                                    </div>
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="street">Street Address</Label>
-                                                        <Input id="street" placeholder="Street and house number" value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} required />
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="city">City</Label>
-                                                            <Input id="city" value={newAddress.city} onChange={e => setNewAddress({ ...newAddress, city: e.target.value })} required />
+                                    <div className="space-y-3">
+                                        {isLoadingOrders ? (
+                                            <Skeleton className="h-20 w-full" />
+                                        ) : orders.length > 0 ? (
+                                            orders.slice(0, 2).map(order => (
+                                                <div key={order.id} className="bg-background rounded-xl p-4 border shadow-sm flex items-center justify-between group cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(`/order-tracker/${order.id}`)}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors uppercase font-black italic">
+                                                            M
                                                         </div>
-                                                        <div className="grid gap-2">
-                                                            <Label htmlFor="postcode">Postcode</Label>
-                                                            <Input id="postcode" value={newAddress.postcode} onChange={e => setNewAddress({ ...newAddress, postcode: e.target.value })} required />
+                                                        <div>
+                                                            <p className="font-bold">Order #{order.id}</p>
+                                                            <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
                                                         </div>
                                                     </div>
+                                                    <Badge variant="outline" className="capitalize">{order.status}</Badge>
                                                 </div>
-                                                <DialogFooter>
-                                                    <Button type="submit" disabled={addAddressMutation.isPending} className="w-full">
-                                                        {addAddressMutation.isPending ? "Locking it in..." : "Save Delivery Spot"}
-                                                    </Button>
-                                                </DialogFooter>
-                                            </form>
-                                        </DialogContent>
-                                    </Dialog>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">No orders yet. Let's change that!</p>
+                                        )}
+                                        <Button variant="link" className="w-full text-primary font-bold uppercase tracking-widest text-xs" onClick={() => handleTabChange('history')}>
+                                            View Full History <ChevronRight className="ml-1 h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </div>
-                                <div className="grid gap-3">
-                                    {isLoadingAddresses ? (
-                                        <Skeleton className="h-24 w-full" />
-                                    ) : addresses.length > 0 ? (
-                                        addresses.map(addr => (
-                                            <Card key={addr.id} className="p-3 md:p-4 flex justify-between items-center gap-2 shadow-sm border-muted hover:border-primary/30 transition-colors">
-                                                <div className="flex min-w-0 items-start gap-3">
-                                                    <div className="shrink-0 p-2 bg-secondary/50 rounded-lg text-primary mt-0.5">
-                                                        <MapPin className="h-4 w-4" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="font-bold leading-none mb-1 break-words">{addr.name}</p>
-                                                        <p className="text-xs text-muted-foreground break-words">{addr.street}, {addr.city} {addr.postcode}</p>
-                                                    </div>
-                                                </div>
-                                                <Button variant="ghost" size="icon" aria-label={`Delete ${addr.name}`} className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={() => deleteAddressMutation.mutate(addr.id)}>
-                                                    <Trash2 className="h-4 w-4" />
+
+                                {/* Addresses Section */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                                            <MapPin className="h-5 w-5 text-primary" /> Delivery Spots
+                                        </h3>
+                                        <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" className="h-11 gap-1 rounded-lg md:h-9">
+                                                    <Plus className="h-3 w-3" /> Add Spot
                                                 </Button>
-                                            </Card>
-                                        ))
-                                    ) : (
-                                        <div className="p-6 text-center border-2 border-dashed rounded-xl bg-background/50">
-                                            <MapPin className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                                            <p className="text-sm text-muted-foreground">No delivery spots saved yet.</p>
-                                        </div>
-                                    )}
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Add New Spot</DialogTitle>
+                                                    <DialogDescription>Where should we deliver your orders?</DialogDescription>
+                                                </DialogHeader>
+                                                <form onSubmit={handleAddAddress}>
+                                                    <div className="space-y-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="name">Label (e.g. Home Base)</Label>
+                                                            <Input id="name" placeholder="Home, Office..." value={newAddress.name} onChange={e => setNewAddress({ ...newAddress, name: e.target.value })} required />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="street">Street Address</Label>
+                                                            <Input id="street" placeholder="Street and house number" value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} required />
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="city">City</Label>
+                                                                <Input id="city" value={newAddress.city} onChange={e => setNewAddress({ ...newAddress, city: e.target.value })} required />
+                                                            </div>
+                                                            <div className="grid gap-2">
+                                                                <Label htmlFor="postcode">Postcode</Label>
+                                                                <Input id="postcode" value={newAddress.postcode} onChange={e => setNewAddress({ ...newAddress, postcode: e.target.value })} required />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button type="submit" disabled={addAddressMutation.isPending} className="w-full">
+                                                            {addAddressMutation.isPending ? "Locking it in..." : "Save Delivery Spot"}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </form>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+                                    <div className="grid gap-3">
+                                        {isLoadingAddresses ? (
+                                            <Skeleton className="h-24 w-full" />
+                                        ) : addresses.length > 0 ? (
+                                            addresses.map(addr => (
+                                                <Card key={addr.id} className="p-3 md:p-4 flex justify-between items-center gap-2 shadow-sm border-muted hover:border-primary/30 transition-colors">
+                                                    <div className="flex min-w-0 items-start gap-3">
+                                                        <div className="shrink-0 p-2 bg-secondary/50 rounded-lg text-primary mt-0.5">
+                                                            <MapPin className="h-4 w-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold leading-none mb-1 break-words">{addr.name}</p>
+                                                            <p className="text-xs text-muted-foreground break-words">{addr.street}, {addr.city} {addr.postcode}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" aria-label={`Delete ${addr.name}`} className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={() => deleteAddressMutation.mutate(addr.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </Card>
+                                            ))
+                                        ) : (
+                                            <div className="p-6 text-center border-2 border-dashed rounded-xl bg-background/50">
+                                                <MapPin className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                <p className="text-sm text-muted-foreground">No delivery spots saved yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                </div>
+                                <div className="hero-rise space-y-6" style={rise(380)}>
+                                    <WalletNudge />
+                                    <AccountData />
                                 </div>
                             </div>
                         </TabsContent>

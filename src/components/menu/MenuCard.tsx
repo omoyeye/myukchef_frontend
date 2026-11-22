@@ -80,6 +80,12 @@ export const MenuCard = ({ item, className }: MenuCardProps) => {
               {item.chef.paused ? "Not taking orders" : nextOpenLabel(item.chef.nextOpen)}
             </div>
           )}
+          {/* The chef's own cooking time, when they've set one and are cooking now. */}
+          {!item.isSoldOut && item.chef?.prepTime && !item.chef.paused && item.chef.openNow !== false && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow">
+              Ready in {item.chef.prepTime.min}-{item.chef.prepTime.max} min
+            </div>
+          )}
           {item.isSoldOut && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
               <Badge variant="secondary" className="text-sm">

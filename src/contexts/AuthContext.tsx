@@ -11,6 +11,14 @@ interface User {
     role?: string;
     /** Set once they've clicked the link in their confirmation email. */
     emailVerifiedAt?: string | null;
+    /** Admins: Super Admins can do everything; staff only the menus in their role. */
+    isSuperAdmin?: boolean;
+    adminRoleName?: string | null;
+    permissions?: string[];
+    /** New staff must set their own password and complete their profile first. */
+    mustCompleteProfile?: boolean;
+    phone?: string | null;
+    jobTitle?: string | null;
 }
 
 interface AuthContextType {

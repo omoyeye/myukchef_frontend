@@ -275,3 +275,18 @@ label {
 @media (prefers-reduced-motion: reduce) {
   .animate-cart-bump, .shimmer::after { animation: none; }
 }
+
+/* Portal hero cards: a soft band of light sweeps across every few seconds. */
+@keyframes portal-sheen {
+  0% { transform: translateX(-160%) rotate(18deg); }
+  28%, 100% { transform: translateX(560%) rotate(18deg); }
+}
+.portal-sheen { position: absolute; top: -40%; bottom: -40%; left: 0; width: 18%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent); animation: portal-sheen 6s cubic-bezier(0.45, 0, 0.2, 1) 1.2s infinite; pointer-events: none; }
+/* Tiles lift a little under the pointer. */
+.portal-lift { transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease; }
+.portal-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.35); }
+.portal-lift:active { transform: translateY(0) scale(0.98); }
+@media (prefers-reduced-motion: reduce) {
+  .portal-sheen { display: none; }
+  .portal-lift:hover { transform: none; }
+}
