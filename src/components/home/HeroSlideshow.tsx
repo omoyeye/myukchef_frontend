@@ -6,12 +6,13 @@ import { thumb } from '@/lib/images';
  * The hero photo, slowly crossfading through real dishes from the menu. The first image loads with
  * the page; the rest load quietly afterwards. Holds still for people who prefer reduced motion.
  */
-export function HeroSlideshow({ first, firstAlt, dishes, className, imgProps }: {
+export function HeroSlideshow({ first, firstAlt, dishes, className, imgProps, dotsClassName }: {
     first: string;
     firstAlt: string;
     dishes: { image: string; name: string }[];
     className?: string;
     imgProps?: React.ImgHTMLAttributes<HTMLImageElement>;
+    dotsClassName?: string;
 }) {
     const slides = [{ src: first, alt: firstAlt }, ...dishes.slice(0, 5).map((d) => ({ src: thumb(d.image, 960) ?? d.image, alt: d.name }))];
     const [index, setIndex] = useState(0);
@@ -49,7 +50,7 @@ export function HeroSlideshow({ first, firstAlt, dishes, className, imgProps }: 
                 />
             ))}
             {slides.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" aria-hidden>
+                <div className={cn('absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5', dotsClassName)} aria-hidden>
                     {slides.map((s, i) => <span key={s.src} className={cn('h-1.5 rounded-full bg-white/80 transition-all duration-500', i === index ? 'w-5' : 'w-1.5 opacity-60')} />)}
                 </div>
             )}

@@ -207,6 +207,22 @@ label {
 .hero-frame {
   animation: hero-pop 0.9s cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
 }
+/* Large screens: the hero photos melt into the dark background on the left, top and bottom, so the
+   headline can sit over them. A soft shadow keeps the words readable where they overlap. */
+@media (min-width: 1024px) {
+  .hero-fade {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.35) 18%, #000 45%),
+      linear-gradient(to bottom, transparent 0%, #000 16%, #000 80%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.35) 18%, #000 45%),
+      linear-gradient(to bottom, transparent 0%, #000 16%, #000 80%, transparent 100%);
+    mask-composite: intersect;
+  }
+  .hero-copy h1,
+  .hero-copy p {
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+  }
+}
 .hero-zoom {
   animation: hero-zoom 16s ease-in-out infinite alternate;
 }

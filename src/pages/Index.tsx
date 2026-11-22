@@ -90,11 +90,27 @@ const Index = () => {
       />
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-ink text-ink-foreground pt-28 pb-16 md:pt-36 md:pb-24">
+      <section className="relative flex flex-col overflow-hidden bg-ink text-ink-foreground pt-28 pb-16 md:pt-36 md:pb-24">
         <div aria-hidden className="hero-glow absolute -top-40 -right-40 h-[32rem] w-[32rem] rounded-full bg-primary/30 blur-[120px]" />
         <div aria-hidden className="hero-glow hero-glow-slow absolute -bottom-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-accent/15 blur-[120px]" />
-        <div className="container relative grid lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-8">
+        {/* On large screens the photos fill the right of the hero and fade into it, under the words. */}
+        <div className="relative mx-4 mt-10 aspect-[4/5] sm:mx-auto sm:aspect-[16/10] sm:max-w-2xl lg:absolute lg:inset-y-0 lg:right-0 lg:m-0 lg:aspect-auto lg:w-[62%] lg:max-w-none xl:w-[60%] order-last">
+          <div className="hero-frame hero-fade absolute inset-0 overflow-hidden rounded-[2rem] shadow-2xl ring-1 ring-ink-foreground/10 lg:rounded-none lg:shadow-none lg:ring-0">
+            <HeroSlideshow first={heroChef} firstAlt="A chef plating a freshly cooked meal" dishes={popularItems.filter((d) => d.image)} imgProps={{ width: 1280, height: 1280, ...HERO_IMAGE_PRIORITY }} dotsClassName="lg:bottom-12" />
+          </div>
+          <Link to="/meal-plans" className="hero-chip hero-chip-late absolute right-3 top-4 sm:-right-4 sm:top-10 lg:right-10 lg:top-32 flex min-h-11 items-center gap-2 rounded-full bg-ink/90 px-4 text-sm font-bold text-ink-foreground shadow-xl ring-1 ring-ink-foreground/15 backdrop-blur">
+            <CalendarDays className="h-4 w-4 text-primary" /> Plans from 1 week to 6 months
+          </Link>
+          <div className="hero-chip absolute left-3 bottom-4 sm:-left-6 sm:bottom-10 lg:left-auto lg:right-24 lg:bottom-24 bg-card text-card-foreground rounded-2xl p-4 shadow-xl flex items-center gap-3 max-w-[16rem]">
+            <div className="h-11 w-11 rounded-full bg-primary/15 flex items-center justify-center"><BadgeCheck className="h-6 w-6 text-primary" /></div>
+            <div>
+              <div className="font-bold text-sm">Every chef reviewed</div>
+              <div className="text-xs text-muted-foreground">Before they go live</div>
+            </div>
+          </div>
+        </div>
+        <div className="container relative z-10 grid lg:grid-cols-12 gap-12 items-center lg:min-h-[36rem]">
+          <div className="lg:col-span-7 space-y-8 hero-copy">
             <div className="hero-rise" style={heroDelay(0)}><KitchenStatus isOpen={kitchen.isOpen ?? true} deliveryTime={`${kitchen.prepTimeMin ?? 20}-${kitchen.prepTimeMax ?? 40}`} /></div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-extrabold leading-[0.95]">
               <span className="block hero-rise" style={heroDelay(100)}>Real chefs.</span>
@@ -116,22 +132,6 @@ const Index = () => {
             <Link to="/recommend" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline hero-rise" style={heroDelay(860)}>
               <Sparkles className="h-4 w-4" /> Not sure what to pick? Get recommendations for your diet, budget and occasion
             </Link>
-          </div>
-
-          <div className="lg:col-span-5 relative">
-            <div className="relative rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl ring-1 ring-ink-foreground/10 hero-frame">
-              <HeroSlideshow first={heroChef} firstAlt="A chef plating a freshly cooked meal" dishes={popularItems.filter((d) => d.image)} imgProps={{ width: 1280, height: 1280, ...HERO_IMAGE_PRIORITY }} />
-            </div>
-            <Link to="/meal-plans" className="hero-chip hero-chip-late absolute right-3 top-4 sm:-right-4 sm:top-10 flex min-h-11 items-center gap-2 rounded-full bg-ink/90 px-4 text-sm font-bold text-ink-foreground shadow-xl ring-1 ring-ink-foreground/15 backdrop-blur">
-              <CalendarDays className="h-4 w-4 text-primary" /> Plans from 1 week to 6 months
-            </Link>
-            <div className="hero-chip absolute left-3 bottom-4 sm:-left-6 sm:bottom-10 bg-card text-card-foreground rounded-2xl p-4 shadow-xl flex items-center gap-3 max-w-[16rem]">
-              <div className="h-11 w-11 rounded-full bg-primary/15 flex items-center justify-center"><BadgeCheck className="h-6 w-6 text-primary" /></div>
-              <div>
-                <div className="font-bold text-sm">Every chef reviewed</div>
-                <div className="text-xs text-muted-foreground">Before they go live</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
