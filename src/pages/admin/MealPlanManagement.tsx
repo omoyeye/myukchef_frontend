@@ -1,4 +1,5 @@
 import { peopleLabel } from "@/lib/area";
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Search, Trash2 } from "lucide-react";
@@ -136,7 +137,12 @@ const MealPlanManagement = () => {
                                                         {[...new Set([w.status, ...WEEK_STATUSES])].map((s) => <option key={s} value={s}>{WEEK_STATUS[s]?.label ?? s}</option>)}
                                                     </select>
                                                 </TableCell>
-                                                <TableCell><Checkbox aria-label={`Week ${w.weekNumber} paid`} checked={w.isPaid} onCheckedChange={(v) => weekPaid.mutate({ weekId: w.id, isPaid: !!v })} /></TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-1">
+                                                        <Checkbox aria-label={`Week ${w.weekNumber} paid`} checked={w.isPaid} onCheckedChange={(v) => weekPaid.mutate({ weekId: w.id, isPaid: !!v })} />
+                                                        {w.total > 0 && <DocumentButton path={`plan-weeks/${w.id}`} iconOnly variant="ghost" size="icon" className="h-9 w-9" label={w.isPaid ? `Week ${w.weekNumber} receipt` : `Week ${w.weekNumber} invoice`} />}
+                                                    </div>
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -197,6 +198,7 @@ const LiveOrders = () => {
                                     </div>
                                     <div className="flex flex-wrap gap-1">
                                         <Button asChild variant="ghost" size="sm" className="h-10"><Link to={`/order-tracker/${order.id}`}><Eye className="mr-1 h-3 w-3" />View</Link></Button>
+                                        <DocumentButton path={`orders/${order.id}`} variant="ghost" size="sm" className="h-10" label={['paid', 'refunded'].includes(order.paymentStatus ?? '') ? 'Receipt' : 'Invoice'} />
                                         {!['cancelled', 'completed'].includes(order.status) && (
                                             <Button variant="ghost" size="sm" className="h-10 text-destructive" onClick={() => { if (confirm(order.paymentStatus === 'paid' ? `Cancel order #${order.id} and refund ${money(order.total)} to the customer's card? The customer and chefs will be told.` : `Cancel order #${order.id}? The customer and chefs will be told.`)) setStatus.mutate({ id: order.id, status: 'cancelled' }); }}>Cancel</Button>
                                         )}

@@ -1,4 +1,5 @@
 import { peopleLabel } from "@/lib/area";
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { useEffect, useMemo, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
 import { PaymentDueCard } from "@/components/plans/PaymentDueCard";
@@ -153,6 +154,7 @@ const WeekCard = ({ plan, week, isNext, onEdit, onSkip, onUnskip, busy }: { plan
                 <div className="min-w-0 text-sm">
                     {!off && <span className="font-bold">{money(week.total)}</span>}
                     {!off && week.isPaid && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-900">Paid</span>}
+                    {!off && week.total > 0 && <DocumentButton path={`plan-weeks/${week.id}`} iconOnly variant="ghost" size="icon" className="ml-1 h-9 w-9 align-middle" label={week.isPaid ? `Download the receipt for week ${week.weekNumber}` : `Download the invoice for week ${week.weekNumber}`} />}
                     {off && week.status !== "missed" && <span className="text-muted-foreground">No charge</span>}
                     {week.status === "missed" && <span className="text-muted-foreground">You won't be charged</span>}
                     {!off && !week.isPaid && week.total > 0 && ["scheduled", "preparing", "out_for_delivery", "delivered"].includes(week.status) && (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -21,7 +22,7 @@ interface PayoutData {
 
 const money = (n: number) => `£${Number(n).toFixed(2)}`;
 
-/** The chef's invoices: check and submit each one, get paid, and keep the receipts. */
+/** The chef's invoices: each is paid automatically, with a receipt to keep. */
 export function ChefPayouts() {
     const qc = useQueryClient();
     const [params, setParams] = useSearchParams();
@@ -46,7 +47,6 @@ export function ChefPayouts() {
 
     if (isLoading || !data) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     const { invoices, payoutAccount: acct, rules } = data;
-    const toSubmit = invoices.filter((i) => i.status === 'awaiting_chef');
     const paidTotal = invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.netAmount, 0);
 
     return (
@@ -56,7 +56,7 @@ export function ChefPayouts() {
                     <h2 className="text-2xl font-bold">Payouts</h2>
                     <p className="text-muted-foreground">
                         Once your food is delivered and the customer confirms (or {rules.autoConfirmHours} hours pass without a problem), we raise an invoice for your sales less MYUKCHEF's {rules.percent}% commission.
-                        Check it and submit it, and we pay you with a receipt for your records.
+                        We pay it automatically, with no need to submit anything, and send you a receipt for your records. If an invoice looks wrong, contact MYUKCHEF.
                     </p>
                 </div>
                 <Button variant="outline" className="h-11" onClick={() => refetch()} disabled={isRefetching}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
@@ -67,9 +67,9 @@ export function ChefPayouts() {
                     <CardTitle className="flex items-center gap-2 text-lg"><CreditCard className="h-5 w-5 text-primary" />How we pay you</CardTitle>
                     <CardDescription>
                         {acct.payoutsEnabled
-                            ? 'Your Stripe account is connected. Submitted invoices are paid to it automatically.'
+                            ? 'Your Stripe account is connected. Invoices are paid to it automatically as soon as they\'re raised.'
                             : acct.stripeReady
-                                ? "Connect a Stripe account to be paid automatically as soon as you submit an invoice. Until then, we pay you by bank transfer to the account under Safety and payouts."
+                                ? "Connect a Stripe account to be paid the moment each invoice is raised. Until then, we pay you by bank transfer to the account under Safety and payouts."
                                 : 'We pay you by bank transfer to the account under Safety and payouts.'}
                     </CardDescription>
                 </CardHeader>
@@ -84,7 +84,7 @@ export function ChefPayouts() {
             </Card>
 
             <div className="grid gap-3 sm:grid-cols-3">
-                <Stat label="Invoices to submit" value={String(toSubmit.length)} />
+                <Stat label="Invoices" value={String(invoices.length)} />
                 <Stat label="Waiting to be paid" value={money(invoices.filter((i) => ['submitted', 'processing'].includes(i.status)).reduce((s, i) => s + i.netAmount, 0))} />
                 <Stat label="Paid to you" value={money(paidTotal)} />
             </div>
@@ -109,12 +109,12 @@ export function ChefPayouts() {
                                     {invoice.status === 'void' && invoice.holdReason && <p className="text-sm text-muted-foreground">{invoice.holdReason}</p>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {invoice.status === 'awaiting_chef' && <Button className="h-11" onClick={() => setSubmitting(invoice)}><FileText className="mr-2 h-4 w-4" />Check and submit</Button>}
                                     <Button asChild variant="outline" className="h-11">
                                         <Link to={`/chef/receipts/${invoice.id}`}>
                                             {invoice.status === 'paid' ? <><Receipt className="mr-2 h-4 w-4" />Receipt</> : <><FileText className="mr-2 h-4 w-4" />View invoice</>}
                                         </Link>
                                     </Button>
+                                    <DocumentButton path={`payouts/${invoice.id}`} iconOnly size="icon" className="h-11 w-11" label={`Download ${invoice.status === 'paid' ? 'receipt' : 'invoice'} ${invoice.number} as a PDF`} />
                                 </div>
                             </CardContent>
                         </Card>

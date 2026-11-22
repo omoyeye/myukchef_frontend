@@ -30,8 +30,8 @@ export interface Invoice {
 }
 
 const STATUS: Record<Invoice['status'], { label: string; className: string }> = {
-    awaiting_chef: { label: 'Waiting for the chef', className: 'bg-amber-100 text-amber-900' },
-    submitted: { label: 'Submitted, to pay', className: 'bg-sky-100 text-sky-900' },
+    awaiting_chef: { label: 'Being paid', className: 'bg-amber-100 text-amber-900' },
+    submitted: { label: 'Waiting to be paid', className: 'bg-sky-100 text-sky-900' },
     processing: { label: 'Paying', className: 'bg-sky-100 text-sky-900' },
     paid: { label: 'Paid', className: 'bg-emerald-100 text-emerald-900' },
     held: { label: 'On hold', className: 'bg-orange-100 text-orange-900' },

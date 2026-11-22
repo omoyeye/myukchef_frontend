@@ -1,4 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { allergenSummary } from '@/lib/allergens';
 import { CheckCircle2, MapPin, ChefHat, Truck, Loader2 } from 'lucide-react';
 import { GoogleMap } from '@/components/location/GoogleMap';
@@ -111,6 +112,16 @@ const OrderTracker = () => {
                         returnedPaid={searchParams.get('paid') === '1'}
                         returnedCancelled={searchParams.get('payment') === 'cancelled'}
                     />
+                    {order.status !== 'awaiting_payment' && (
+                        <div className="mb-6 flex justify-end">
+                            <DocumentButton
+                                path={`orders/${order.id}`}
+                                token={trackingToken}
+                                className="h-11 rounded-full"
+                                label={['paid', 'refunded'].includes(order.paymentStatus ?? '') || order.total === 0 ? 'Download receipt' : 'Download invoice'}
+                            />
+                        </div>
+                    )}
 
                     {/* The delivery code: given to whoever hands the food over (like Uber Eats). Only the customer sees it. */}
                     {order.deliveryCode && (

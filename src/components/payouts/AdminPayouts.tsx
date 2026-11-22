@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +33,6 @@ interface AdminPayoutData { invoices: Invoice[]; deliveries: Delivery[]; rules: 
 const money = (n: number) => `£${Number(n).toFixed(2)}`;
 const FILTERS = [
     { id: 'todo', label: 'To pay', match: (i: Invoice) => ['submitted', 'processing'].includes(i.status) },
-    { id: 'chef', label: 'Waiting for chefs', match: (i: Invoice) => i.status === 'awaiting_chef' },
     { id: 'held', label: 'On hold', match: (i: Invoice) => i.status === 'held' },
     { id: 'paid', label: 'Paid', match: (i: Invoice) => i.status === 'paid' },
     { id: 'all', label: 'All', match: () => true },
@@ -69,7 +69,7 @@ export function AdminPayouts() {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <p className="max-w-3xl text-sm text-muted-foreground">
                     When a delivery is confirmed (or {rules.autoConfirmHours} hours pass without a problem), the chef gets an invoice for their sales less {rules.percent}% commission.
-                    Once they submit it, they're paid automatically if they've connected Stripe. Otherwise it waits here for you to pay by bank transfer.
+                    It's paid straight away by Stripe if they've connected it. Otherwise it waits here for you to pay by bank transfer, and goes by Stripe on its own once they connect. Hold any invoice you need to check first.
                 </p>
                 <Button variant="outline" className="h-10" onClick={() => refetch()} disabled={isRefetching}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
             </div>
@@ -131,6 +131,7 @@ export function AdminPayouts() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Button asChild variant="ghost" size="sm" className="h-10"><Link to={`/admin/invoices/${invoice.id}`}><Eye className="mr-1 h-4 w-4" />{invoice.status === 'paid' ? 'Receipt' : 'Invoice'}</Link></Button>
+                                <DocumentButton path={`payouts/${invoice.id}`} variant="ghost" size="sm" className="h-10" label="PDF" />
                                 {invoice.status === 'submitted' && (
                                     <>
                                         {invoice.stripeConnected && <Button variant="outline" size="sm" className="h-10" disabled={action.isPending} onClick={() => action.mutate({ path: `/payouts/admin/invoices/${invoice.id}/retry`, message: 'Payout tried again' })}><RefreshCw className="mr-1 h-4 w-4" />Retry Stripe</Button>}

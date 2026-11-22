@@ -1,4 +1,5 @@
 import { unitLabel } from "@/lib/eventMenu";
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { peopleLabel } from "@/lib/area";
 import { useEffect, useState } from "react";
 import { PayByCardButton } from "@/components/orders/PayByCardButton";
@@ -183,6 +184,12 @@ const MyBookingDetail = () => {
                 )}
                 {booking.paymentStatus === "refunded" && <p className="mt-5 rounded-2xl bg-secondary p-4 font-semibold">This booking was cancelled and refunded.</p>}
                 {booking.status === "cancelled" && booking.paymentStatus !== "refunded" && <p className="mt-5 rounded-2xl bg-secondary p-4 font-semibold">This booking is cancelled. Nothing is owed.</p>}
+
+                {booking.finalTotal != null && (
+                    <div className="mt-5 flex justify-end">
+                        <DocumentButton path={`events/${booking.id}`} className="h-11 rounded-full" label={["paid", "refunded"].includes(booking.paymentStatus) ? "Download receipt" : "Download invoice"} />
+                    </div>
+                )}
 
                 {/* QUOTES */}
                 <section aria-labelledby="quotes-heading" className="mt-6">

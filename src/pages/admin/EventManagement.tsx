@@ -1,4 +1,5 @@
 import { peopleLabel } from "@/lib/area";
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -155,7 +156,10 @@ const EventManagement = () => {
                                         <h3 className="flex items-center gap-2 font-bold"><Banknote className="h-4 w-4 text-primary" />Customer payment</h3>
                                         <p className="text-sm text-muted-foreground">Reference <span className="font-semibold text-foreground">{detail.reference}</span>{detail.finalTotal != null ? ` · ${money(detail.finalTotal)}` : " · customer hasn't confirmed yet"}</p>
                                     </div>
-                                    <Pill s={PAYMENT[detail.paymentStatus]} />
+                                    <div className="flex items-center gap-2">
+                                        <Pill s={PAYMENT[detail.paymentStatus]} />
+                                        {detail.finalTotal != null && <DocumentButton path={`events/${detail.id}`} variant="outline" size="sm" className="h-10" label={["paid", "refunded"].includes(detail.paymentStatus) ? "Receipt" : "Invoice"} />}
+                                    </div>
                                 </div>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {detail.status === "awaiting_payment" && <Button className="h-11" disabled={payment.isPending} onClick={() => { if (confirm(`Confirm ${money(detail.finalTotal)} has arrived in the company account? The chefs will get the venue details.`)) payment.mutate("paid"); }}><Check className="mr-2 h-4 w-4" />Full payment received</Button>}

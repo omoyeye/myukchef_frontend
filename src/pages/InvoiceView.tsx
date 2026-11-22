@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { DocumentButton } from '@/components/common/DocumentButton';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ArrowLeft, Loader2, Printer } from 'lucide-react';
@@ -46,7 +47,10 @@ const InvoiceView = () => {
             <div className="mx-auto max-w-2xl px-4">
                 <div className="mb-4 flex justify-between gap-2 print:hidden">
                     <Button variant="ghost" className="h-11" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(back))}><ArrowLeft className="mr-2 h-4 w-4" />Back</Button>
-                    <Button variant="outline" className="h-11" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print or save as PDF</Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <Button variant="ghost" className="h-11" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print</Button>
+                        <DocumentButton path={`payouts/${invoice.id}`} className="h-11" label="Download PDF" />
+                    </div>
                 </div>
                 <article className="space-y-6 rounded-2xl border bg-card p-6 shadow-sm sm:p-10 print:border-0 print:shadow-none">
                     <header className="flex flex-wrap items-start justify-between gap-4">
@@ -73,7 +77,7 @@ const InvoiceView = () => {
                         <div className="sm:text-right">
                             <h2 className="mb-1 text-xs font-bold uppercase text-muted-foreground">Dates</h2>
                             <p>Raised {date(invoice.createdAt)}</p>
-                            {invoice.submittedAt && <p>Submitted {date(invoice.submittedAt)}{invoice.submittedName ? ` by ${invoice.submittedName}` : ''}</p>}
+                            {invoice.submittedAt && <p>{invoice.submittedName === 'Accepted automatically' || !invoice.submittedName ? `Accepted ${date(invoice.submittedAt)}` : `Submitted ${date(invoice.submittedAt)} by ${invoice.submittedName}`}</p>}
                             {invoice.paidAt && <p>Paid {date(invoice.paidAt)}</p>}
                         </div>
                     </section>
